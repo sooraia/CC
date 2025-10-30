@@ -1,4 +1,4 @@
-# CC-tp2
+# CC-TP2
 Trabalho prático de Comunicações por Computador
 
 * Sofia Freitas, a106798
