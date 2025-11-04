@@ -5,7 +5,7 @@ import struct
 def serialize_telemetry(rover_id, position, planet, state, power_level, orientation, temperature, speed, direction):
 
     res = rover_id.encode('utf-8').ljust(5, b'\0') # é preciso levar em conta o alinhamento de bytes?
-    res += struct.pack('>f', position[0])          # not sure se é suposto usar este package, mas pytho não tem nenhum método para converter floats em bytes
+    res += struct.pack('>f', position[0])          # not sure se é suposto usar este package, mas python não tem nenhum método para converter floats em bytes
     res += struct.pack('>f', position[1])
     res += planet.encode('utf-8').ljust(1, b'\0')
     res += power_level.encode('utf-8').ljust(3, b'\0') #000-100%
@@ -14,8 +14,7 @@ def serialize_telemetry(rover_id, position, planet, state, power_level, orientat
     res += struct.pack('>f', temperature)
     res += struct.pack('>f', speed)
     res += struct.pack('>f', direction)
-
-    res += state.encode('utf-8') # tamanho variavél (last element)
+    res += state.encode('utf-8').ljust(1, b'\0') # 1 - em missão, 2 - a caminho, 3 - parado, 4 - erro
 
     return res
 
@@ -31,7 +30,6 @@ def deserialize_telemetry(data):
     temperature = struct.unpack('>f', data[22:26])[0]
     speed = struct.unpack('>f', data[26:30])[0]
     direction = struct.unpack('>f', data[30:34])[0]
-
     state = data[34:].decode('utf-8')  # do byte 34 até ao fim
 
     return {
@@ -43,5 +41,5 @@ def deserialize_telemetry(data):
         'temperature': temperature,
         'speed': speed,
         'direction': direction,
-        'state': state  # tamanho variável
+        'state': state
     }
