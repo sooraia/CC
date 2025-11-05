@@ -1,66 +1,132 @@
 """Serialização binária para Mission Link (UDP)"""
 
+from abc import ABC, abstractmethod
 import struct
+import time
+from typing import ClassVar
 
-def serialize_request():
-    res='1'.encode('utf8')
-    #serializar request
-    return
+# superclasse abstrata para mensagens ML, subclasses para cada tipo de mensagem
+# tipo, timestamp, numseq - comum a qualquer mensagem missionlink (header aplicacional)
 
-def serialize_ack():
-    res='2'.encode('utf8')
-    #serializar ack
-    return
+class MissionLink(ABC):
 
-def serialize_task(tasl_id):
-    return
+    _sequence_counter: ClassVar[int] = 0
+     
+    def __init__(self, sequence_num: int = 0):
+        self.sequence_num = sequence_num    #número de sequência
 
-def serialize_mission(mission_id, area, task_id, duration):
-    res='3'.encode('utf8')
+    def get_message_type(self) -> str:      #códigos para cada tipo de mensagem
+        if isinstance(self, MLRequest):
+            return '1'
+        elif isinstance(self, MLMission):
+            return '2'
+        elif isinstance(self, MLAck):
+            return '3'
+        elif isinstance(self, MLReport):
+            return '4'
+        else:
+            return
     
-    res+=mission_id.encode('utf8').ljust(5, b'\0')
+    @abstractmethod
+    def serialize_payload(self) -> bytes:
+        pass
 
-    res+=struct.pack('>f', area[0]) 
-    res+=struct.pack('>f', area[1]) 
-    res+=struct.pack('>f', area[2]) 
-    res+=struct.pack('>f', area[3]) 
+    def serialize(self) -> bytes:
+        header = self.get_message_type().encode('utf-8')
 
-    res+=serialize_task(task_id)
+        timestamp= int(time.time())   #timestamp em que a mensagem é enviada
+        header += timestamp.to_bytes(4, 'big')
 
-    res+=duration.to_bytes(4, 'big')
+        header += self.sequence_num.to_bytes(4, 'big')
 
-    return res
+        payload = self.serialize_payload()
 
-def serializa_report():
-    res='4'.encode('utf8')
-    #serializar report
-    return
+        return header + payload
 
+    @abstractmethod
+    def deserialize_payload(data):
+        pass
+ 
+    @classmethod
+    def deserialize(cls, data: bytes):
 
-def deserialize_request(data):
-    return
+        message_type = data[0:1].decode('utf-8')
+        timestamp = int.from_bytes(data[1:5], "big")
+        sequence_num = int.from_bytes(data[5:9], "big")
 
-def deserialize_ack(data):
-    return
-
-def deserialize_mission(data):
-    return
-
-
-def deserialize_report(data):
-    return
-
-
-def deserialize_ml(data):
+        payload = data[9:]
+        
+        if message_type == '1':
+            return MLRequest.deserialize_payload(payload, timestamp, sequence_num)
+        elif message_type == '2':
+            return MLMission.deserialize_payload(payload, timestamp, sequence_num)
+        elif message_type == '3':
+            return MLAck.deserialize_payload(payload, timestamp, sequence_num)
+        elif message_type == '4':
+            return MLReport.deserialize_payload(payload, timestamp, sequence_num)
+        else:
+            raise ValueError(f"Tipo desconhecido: {message_type}")
     
-    type = data[0:1].decode('utf-8').rstrip('\0')
 
-    if(type=='1'):
-        return deserialize_request(data[1:])
-    elif(type=='2'):
-        return deserialize_ack(data)
-    elif(type=='3'):
-        return deserialize_mission(data)
-    elif(type=='4'):
-        return deserialize_report(data)
+class MLRequest(MissionLink): #mensagem ML do tipo Pedido (subclasse de MissionLink)
+
+    def __init__(self, sequence_num: int = 0):
+        super().__init__(sequence_num)
+
+    def serialize_payload(self):
+        #...
+        return
+    
+    def deserialize_payload(data):
+        #...
+        return
+
+
+class MLAck(MissionLink): #mensagem ML do tipo Ack
+
+    def __init__(self, sequence_num: int = 0):
+        super().__init__(sequence_num)
+        #...
+
+    def serialize_payload(self):
+        #...
+        return
+    
+    def deserialize_payload(data):
+        #...
+        return
+
+
+class MLMission(MissionLink): #mensagem ML do tipo Missão
+
+    def __init__(self, sequence_num: int = 0):
+        super().__init__(sequence_num)
+        #...
+
+    def serialize_payload(self):
+        #...
+        return
+
+    def serialize(self):
+        res=super.serialize_header()
+        #...
+        return
+    
+    def deserialize_payload(data):
+        #...
+        return
+
+class MLReport(MissionLink): #mensagem ML do tipo Report (atualização)
+
+    def __init__(self, sequence_num: int = 0):
+        super().__init__(sequence_num)
+        #...
+
+    def serialize_payload(self):
+        #...
+        return
+
+    def deserialize_payload(data):
+        #...
+        return
     
