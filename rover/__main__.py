@@ -1,11 +1,13 @@
 from socket import gethostname
+import sys
 from threading import Thread
 from time import sleep
 from common.telemetry_system import TelemetrySystem
-from common.ts_protocol import TSMessage, TS_DEFAULT_PORT, SerializationException
+from common.ts_protocol import TSMessage, SerializationException
+from common.__init__ import TS_DEFAULT_PORT
 from rover.telemetry import RoverTelemetry
 
-server_address = '10.0.3.20'
+server = '10.0.3.20'
 telemetry_interval = 120
 
 def send_telemetry(TSconnection, state : RoverTelemetry):
@@ -23,18 +25,25 @@ def send_telemetry(TSconnection, state : RoverTelemetry):
             temperature=telemetry_dict['temperature'],
             speed=telemetry_dict['speed'],
             direction=telemetry_dict['direction'])
-
-        data = message.serialize_telemetry
+        message.print_telemetry()
+        data = message.serialize_telemetry()
         TSconnection.send(data)
         sleep(telemetry_interval)
 
 
 def main(argv: list[str]) -> None:
     threads : list = list()
-    rover_state = RoverTelemetry(argv[0])
+    rover_state = RoverTelemetry(rover_id='R-01', planet='1') #rover_id=gethostname() ??
+    
+    server_address = server
+    if(len(argv)>1):
+        print("server address: " + argv[1])
+        server_address = argv[1]
 
-    telemetrysystem = TelemetrySystem(gethostname())
+    telemetrysystem = TelemetrySystem('', 0)
+    print(f"Connecting to server at {server_address}:{TS_DEFAULT_PORT}...")
     telemetrysystem.connect(server_address, TS_DEFAULT_PORT)
+    print("Connected to server.")
     threads.append(Thread(target=send_telemetry(telemetrysystem, rover_state)))
 
     for thread in threads:
@@ -45,4 +54,4 @@ def main(argv: list[str]) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)

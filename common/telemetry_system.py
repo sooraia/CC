@@ -1,18 +1,17 @@
 import socket
 import threading
 import time
-from ts_protocol import TS_LENGTH
+from common.ts_protocol import TS_LENGTH
 
 class TelemetrySystem:
-    def __init__(self, host: str, port: int, bind_port ):
+
+    def __init__(self, host: str, port: int = 0): # valor default 0 >>> o sistema encontra uma porta livre
         self.host = host
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        
         self.socket.bind((self.host, self.port))
-        if bind_port is not None:
-            self.socket.bind(('0.0.0.0', bind_port))
-
+        
         self.lock = threading.RLock()
         self.running = False
         
@@ -22,7 +21,8 @@ class TelemetrySystem:
             self.socket.listen()
             while self.running:
                 client_socket, addr = self.socket.accept()
-                connection_thread = threading.Thread(target=self._handle_client,  args=(client_socket, addr)).start()
+                connection_thread = threading.Thread(target=self._handle_client,  args=(client_socket, addr))
+                connection_thread.start()
 
     def _handle_client(self, client_socket: socket.socket, addr: tuple):
         while self.running:
@@ -40,9 +40,12 @@ class TelemetrySystem:
                 break
 
     def connect(self, host: str, port: int):
+        print("1")
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.settimeout(10.0)  # Timeout para connect()
+        print("2")
+        #self.socket.settimeout(10.0)  # Timeout para connect()
         self.socket.connect((host, port))
+        print("3")
         self.connected_addr = host
         self.connected_port = port
         print(f"Conectado a {host}:{port}")

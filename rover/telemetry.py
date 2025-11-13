@@ -4,7 +4,7 @@ from typing import List, Tuple
 
 class RoverTelemetry:
     
-    def __init__(self, rover_id: str, planet: str = 'M'):
+    def __init__(self, rover_id: str, planet: str = '1'):
         self.rover_id = rover_id
         self.planet = planet
         
@@ -31,7 +31,7 @@ class RoverTelemetry:
             'planet' : self.planet,
             'position': self.position.copy(),
             'state': self.operational_state,
-            'power_level': int(self.power_level),
+            'power_level': self.power_level,
             'orientation': self.solar_orientation.copy(),
             'temperature': self.temperature,
             'speed': self.speed,
