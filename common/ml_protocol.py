@@ -1,27 +1,24 @@
 """Serialização binária para Mission Link (UDP)"""
 
-from abc import ABC, abstractmethod
+from abc import ABC
+from typing import ClassVar
+import time
 import struct
 import threading
-import time
-from typing import ClassVar
 
-# superclasse abstrata para mensagens ML, subclasses para cada tipo de mensagem
-# tipo, timestamp, numseq - comum a qualquer mensagem missionlink (header aplicacional)
 
 class SerializationException(Exception):
     pass
 
 
 class MissionLink(ABC):
-
     _sequence_counter: ClassVar[int] = 0
      
-    def __init__(self, timestamp, sequence_num: int = 0):
-        self.sequence_num = sequence_num    #número de sequência
+    def __init__(self, timestamp: int, sequence_num: int = 0):
+        self.sequence_num = sequence_num    # número de sequência
         self.timestamp = timestamp
 
-    def get_message_type(self) -> str:      #códigos para cada tipo de mensagem
+    def get_message_type(self) -> str:      # códigos para cada tipo de mensagem
         if isinstance(self, MLRequest):
             return '1'
         elif isinstance(self, MLMission):
@@ -31,16 +28,16 @@ class MissionLink(ABC):
         elif isinstance(self, MLReport):
             return '4'
         else:
-            return
-    
-    @abstractmethod
+            raise SerializationException("Unknown message subclass")
+
     def serialize_payload(self) -> bytes:
-        pass
+        raise NotImplementedError
 
     def serialize(self) -> bytes:
         header = self.get_message_type().encode('utf-8')
 
-        timestamp= int(time.time())   #timestamp em que a mensagem é enviada
+        # timestamp em que a mensagem é enviada
+        timestamp = int(time.time())
         header += timestamp.to_bytes(4, 'big')
 
         header += self.sequence_num.to_bytes(4, 'big')
@@ -48,23 +45,15 @@ class MissionLink(ABC):
         payload = self.serialize_payload()
 
         return header + payload
-
-    @abstractmethod
-    def deserialize_payload(data):
-        pass
  
     @classmethod
     def from_bytes(cls, data: bytes):
-
-        if(bytes.__len__<9):
-            raise SerializationException('Unknown message type') 
+        if len(data) < 9:
+            raise SerializationException("Message too short")
 
         message_type = data[0:1].decode('utf-8')
         timestamp = int.from_bytes(data[1:5], "big")
         sequence_num = int.from_bytes(data[5:9], "big")
-
-        cls(timestamp, sequence_num)
-
         payload = data[9:]
         
         if message_type == '1':
@@ -76,63 +65,82 @@ class MissionLink(ABC):
         elif message_type == '4':
             return MLReport._deserialize_payload(payload, timestamp, sequence_num)
         else:
-            raise SerializationException('Unknown message type')
-    
+            raise SerializationException(f"Unknown message type: {message_type}")
 
-class MLRequest(MissionLink): #mensagem ML do tipo Pedido (subclasse de MissionLink)
 
-    def __init__(self, rover_id, timestamp, sequence_num: int = 0):
+class MLRequest(MissionLink):  # mensagem ML do tipo Pedido
+    def __init__(self, rover_id: str, timestamp: int, sequence_num: int = 0):
         super().__init__(timestamp, sequence_num)
         self.rover_id = rover_id
 
-    def serialize_payload(self):
+    def serialize_payload(self) -> bytes:
         return self.rover_id.encode("utf-8")
     
     @classmethod
     def _deserialize_payload(cls, payload: bytes, timestamp: int, sequence_num: int):
-        if(payload<2):
-            raise SerializationException('Unknown message type') 
-
+        if len(payload) < 1:
+            raise SerializationException("MLRequest payload too short")
         rover_id = payload.decode('utf-8').rstrip('\0')
-        message = cls(rover_id, timestamp, sequence_num)
-        return message
+        return cls(rover_id, timestamp, sequence_num)
 
-class MLAck(MissionLink): #mensagem ML do tipo Ack
 
-    def __init__(self, timestamp, sequence_num: int = 0):
-        super().__init__(timestamp,sequence_num)
-        #...
+class MLAck(MissionLink):  # mensagem ML do tipo Ack
+    def __init__(self, mission_id: str, timestamp: int, sequence_num: int = 0):
+        super().__init__(timestamp, sequence_num)
+        self.mission_id = mission_id  # ex: "M-001"
 
-    def serialize_payload(self):
-        #...
-        return
-    
+    def serialize_payload(self) -> bytes:
+        # 5 bytes "M-xxx"
+        return self.mission_id.encode('utf-8')
+
     @classmethod
     def _deserialize_payload(cls, payload: bytes, timestamp: int, sequence_num: int):
-        #...
-        message = cls(timestamp, sequence_num)
-        return message
+        if len(payload) < 5:
+            raise SerializationException("MLAck payload too short")
+        mission_id = payload[0:5].decode('utf-8')
+        return cls(mission_id, timestamp, sequence_num)
 
 
-class MLMission(MissionLink): #mensagem ML do tipo Missão
+def validate_polar_coords(coord):
+    """Valida coordenadas polares [distance, bearing]"""
+    if not isinstance(coord, list) or len(coord) != 2:
+        return True  # inválido
+    return False
 
-    mission_counter: int = 0 # Para o mission_id
+
+class MLMission(MissionLink):  # mensagem ML do tipo Missão
+    _mission_counter: int = 0 
     _counter_lock = threading.Lock()
 
-    def __init__(self, area : list, task : str, task_param : str, duration : int, update_interval : int, timestamp : int, sequence_num: int = 0, mission_id: str = None):
-        super().__init__(timestamp,sequence_num)
+    def __init__(
+        self,
+        area: list,
+        task: str,
+        task_param: str,
+        duration: int,
+        update_interval: int,
+        timestamp: int,
+        sequence_num: int = 0,
+        mission_id: str = None
+    ):
+        super().__init__(timestamp, sequence_num)
 
         if mission_id is None:
             self.mission_id = self.get_mission_id()
         else:
-            mission_id = mission_id
+            self.mission_id = mission_id 
         
-        if(not isinstance(area, list) or (len(area) != 2) or validate_polar_coords(area[0]) or validate_polar_coords(area[1])):
+        if (
+            not isinstance(area, list)
+            or len(area) != 2
+            or validate_polar_coords(area[0])
+            or validate_polar_coords(area[1])
+        ):
             raise ValueError("Invalid Area")
         
-        self.area = area # [[r1,a1],[r2,a2]]
-        self.task = task
-        self.task_param = task_param
+        self.area = area  # [[r1,a1],[r2,a2]]
+        self.task = task              # 1 byte
+        self.task_param = task_param  # 1 byte
         self.duration = duration
         self.update_interval = update_interval
 
@@ -140,10 +148,10 @@ class MLMission(MissionLink): #mensagem ML do tipo Missão
     def get_mission_id(cls):
         with cls._counter_lock:
             cls._mission_counter += 1
-        return f"M-{cls._mission_counter:03d}" #capped a 999 missões
+            return f"M-{cls._mission_counter:03d}"  # capped a 999 missões
 
-    def serialize_payload(self):
-        res = self.mission_id.encode('utf-8') # 5 bytes M-xxx
+    def serialize_payload(self) -> bytes:
+        res = self.mission_id.encode('utf-8')  # 5 bytes M-xxx
 
         res += struct.pack('>f', self.area[0][0])
         res += struct.pack('>f', self.area[0][1])
@@ -159,13 +167,16 @@ class MLMission(MissionLink): #mensagem ML do tipo Missão
     
     @classmethod
     def _deserialize_payload(cls, payload: bytes, timestamp: int, sequence_num: int):
+        if len(payload) < 31:
+            raise SerializationException("MLMission payload too short")
+
         mission_id = payload[0:5].decode('utf-8')
 
         area = [
-            [struct.unpack('>f', payload[5:9])[0],    # ponto1 distance
-            struct.unpack('>f', payload[9:13])[0]],  # ponto1 bearing
-            [struct.unpack('>f', payload[13:17])[0],  # ponto2 distance  
-            struct.unpack('>f', payload[17:21])[0]]  # ponto2 bearing
+            [struct.unpack('>f', payload[5:9])[0],   # ponto1 distance
+             struct.unpack('>f', payload[9:13])[0]], # ponto1 bearing
+            [struct.unpack('>f', payload[13:17])[0], # ponto2 distance  
+             struct.unpack('>f', payload[17:21])[0]] # ponto2 bearing
         ]
         
         task = payload[21:22].decode('utf-8')
@@ -173,7 +184,7 @@ class MLMission(MissionLink): #mensagem ML do tipo Missão
         duration = int.from_bytes(payload[23:27], 'big')
         update_interval = int.from_bytes(payload[27:31], 'big')
 
-        message = cls(
+        return cls(
             area,
             task,
             task_param, 
@@ -183,21 +194,27 @@ class MLMission(MissionLink): #mensagem ML do tipo Missão
             sequence_num,
             mission_id
         )
-        return message
 
-class MLReport(MissionLink): #mensagem ML do tipo Report (atualização)
 
-    def __init__(self, timestamp, sequence_num: int = 0):
-        super().__init__(timestamp,sequence_num)
-        #...
+class MLReport(MissionLink):  # mensagem ML do tipo Report (atualização)
+    def __init__(self, mission_id: str, status: str, progress: int, timestamp: int, sequence_num: int = 0):
+        super().__init__(timestamp, sequence_num)
+        self.mission_id = mission_id   # "M-xxx"
+        self.status = status           # 1 byte, ex: '1'=em curso, '2'=concluída, '3'=falha
+        self.progress = progress       # 0-100
 
-    def serialize_payload(self):
-        #...
-        return
+    def serialize_payload(self) -> bytes:
+        res = self.mission_id.encode('utf-8')      # 5 bytes
+        res += self.status.encode('utf-8')         # 1 byte
+        res += self.progress.to_bytes(1, 'big')    # 1 byte
+        return res
 
     @classmethod
     def _deserialize_payload(cls, payload: bytes, timestamp: int, sequence_num: int):
-        #...
-        message = cls(timestamp, sequence_num)
-        return message
-    
+        if len(payload) < 7:
+            raise SerializationException("MLReport payload too short")
+        mission_id = payload[0:5].decode('utf-8')
+        status = payload[5:6].decode('utf-8')
+        progress = int.from_bytes(payload[6:7], 'big')
+        return cls(mission_id, status, progress, timestamp, sequence_num)
+
