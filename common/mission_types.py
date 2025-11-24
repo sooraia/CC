@@ -1,86 +1,65 @@
-"""Dicionários para tipos de missão e os seus parãmetros adicionais e eventos de progresso"""
+"""Dicionários para tipos de missão e os seus parãmetros adicionais/eventos de progresso"""
+
+#em vez de usares
 
 MISSION_TYPES = {
     'S': {  # Coleção de amostras
         'name': 'SAMPLE_COLLECTION',
-        'param': {
-            'S': 'SOIL',
-            'R': 'ROCK', 
-            'A': 'ATMOSPHERE',
-            'W': 'WATER'
-        },
+        'param': {'S': 'Soil', 'R': 'Rock', 'A': 'Atmosphere', 'W': 'Water'},
         'events': {
-            '1': 'SAMPLE_COLLECTED',
-            '2': 'ANALYSIS_STARTED',
-            '3': 'ANALYSIS_COMPLETED',
-            '4': 'COLLECTION_FAILED'
+            '1': 'Collecting Sample', # 25%
+            '2': 'Starting Analysis', # 50% 
+            '3': 'Analysis Completed', # 75%
+            '4': 'Collection Failed' # Error
         }
     },
-    'I': { # Captura de Imagens
+    'I': {  # Captura de imagens
         'name': 'IMAGE_CAPTURE',
-        'params': {
-            'P': 'PANORAMIC',
-            'C': 'INFRARED', 
-            'M': 'MACRO'
-        },
+        'params': {'P': 'Panoramic', 'C': 'Infrared', 'M': 'Macro'},
         'events': {
-            '1': 'IMAGE_CAPTURED',
-            '2': 'CAMERA_ERROR', 
-            '3': 'LOW_LIGHT_CONDITION',
-            '4': 'IMAGE_PROCESSED'
+            '1': 'Capturing Imgage', # 25%
+            '2': 'Processing Image', # 50%
+            '3': 'Quality Verified',# 75%
+            '4': 'Camera Error' # Error
         }
     },
-    'E': {  # Análise Ambiental
+    'E': {  # Análise ambiental
         'name': 'ENVIRONMENTAL_ANALYSIS',
-        'params': {
-            'T': 'TEMPERATURE',
-            'R': 'RADIATION',
-            'P': 'PRESSURE',
-            'H': 'HUMIDITY'
-        },
+        'params': {'T': 'Temperature', 'R': 'Radiation', 'P': 'Pressure', 'H': 'Humidity'},
         'events': {
-            '1': 'MEASUREMENT_TAKEN',
-            '2': 'ANOMALY_DETECTED',
-            '3': 'BASELINE_ESTABLISHED',
-            '4': 'SENSOR_CALIBRATION'
+            '1': 'Initial Readings',
+            '2': 'Analysing Data',
+            '3': 'Report Complete',
+            '4': 'Sensor Failure'
         }
     },
     'D': {  # Instalação de equipamentos
-        'name': 'EQUIPMENT_DEPLOYMENT',
-        'params': {
-            'S': 'SEISMOMETER',
-            'W': 'WEATHER_STATION',
-            'M': 'MARKER',
-            'C': 'COMMUNICATION_RELAY'
-        },
-        'events' : {
-            '1': 'EQUIPMENT_DEPLOYED',
-            '2': 'CALIBRATION_IN_PROGRESS',
-            '3': 'DEPLOYMENT_FAILED'
+        'name': 'EQUIPMENT_DEPLOYMENT', 
+        'params': {'S': 'Seismometer', 'W': 'Weather Station', 'M': 'Marker', 'C': 'Communication Relay'},
+        'events': {
+            '1': 'Positioning Equipment',
+            '2': 'Calibrating',
+            '3': 'Deployment Success',
+            '4': 'Deployment Failed'
         }
     },
     'M': {  # Mapeamento do terreno
         'name': 'MAPPING',
-        'param': {
-            'H': 'HIGH',
-            'M': 'MEDIUM', 
-            'L': 'LOW'
-        },
+        'param': {'H': 'HIGH', 'M': 'MEDIUM', 'L': 'LOW'},
         'events': {
-            '1': 'AREA_MAPPED',
-            '2': 'OBSTACLE_DETECTED',
-            '3': 'TERRAIN_ANALYSIS',
-            '4': 'MAPPING_COMPLETE'
+            '1': 'Scanning area',
+            '2': 'Processing Data',
+            '3': 'Map Generated',
+            '4': 'Mapping Error'
         }
     },
-    'P': {  # Transferência de energia
-        'name': 'POWER_TRANSFER',
+    'A': {  # Auto-diagnóstico
+        'name': 'AUTO_DIAGNOSTIC',
         'events': {
-            '1': 'CONNECTED',
-            '2': 'TRANSFERRING_POWER', 
-            '3': 'TRANSFER_COMPLETE',
-            '4': 'TRANSFER_FAILED',
-            '5': 'ERROR_INSUFFICIENT_ENERGY'
+            '1': 'Starting Diagnostic',
+            '2': 'Checking Systems',
+            '3': 'Diagnostic Complete',
+            '4': 'Critical Error'
         }
     }
 }

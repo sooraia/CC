@@ -11,7 +11,7 @@ class SerializationException(Exception):
     pass
 
 
-class MissionLink(ABC):
+class MLMessage(ABC):
     _sequence_counter: ClassVar[int] = 0
      
     def __init__(self, timestamp: int, sequence_num: int = 0):
@@ -68,7 +68,7 @@ class MissionLink(ABC):
             raise SerializationException(f"Unknown message type: {message_type}")
 
 
-class MLRequest(MissionLink):  # mensagem ML do tipo Pedido
+class MLRequest(MLMessage):  # mensagem ML do tipo Pedido
     def __init__(self, rover_id: str, timestamp: int, sequence_num: int = 0):
         super().__init__(timestamp, sequence_num)
         self.rover_id = rover_id
@@ -84,7 +84,7 @@ class MLRequest(MissionLink):  # mensagem ML do tipo Pedido
         return cls(rover_id, timestamp, sequence_num)
 
 
-class MLAck(MissionLink):  # mensagem ML do tipo Ack
+class MLAck(MLMessage):  # mensagem ML do tipo Ack
     def __init__(self, mission_id: str, timestamp: int, sequence_num: int = 0):
         super().__init__(timestamp, sequence_num)
         self.mission_id = mission_id  # ex: "M-001"
@@ -108,7 +108,7 @@ def validate_polar_coords(coord):
     return False
 
 
-class MLMission(MissionLink):  # mensagem ML do tipo Missão
+class MLMission(MLMessage):  # mensagem ML do tipo Missão
     _mission_counter: int = 0 
     _counter_lock = threading.Lock()
 
@@ -196,7 +196,7 @@ class MLMission(MissionLink):  # mensagem ML do tipo Missão
         )
 
 
-class MLReport(MissionLink):  # mensagem ML do tipo Report (atualização)
+class MLReport(MLMessage):  # mensagem ML do tipo Report (atualização)
     def __init__(self, mission_id: str, status: str, progress: int, timestamp: int, sequence_num: int = 0):
         super().__init__(timestamp, sequence_num)
         self.mission_id = mission_id   # "M-xxx"

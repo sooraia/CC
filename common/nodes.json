@@ -1,0 +1,34 @@
+{
+    "nave-mae": {
+      "interfaces": {
+        "eth0": "10.0.1.20",
+        "eth1": "10.0.10.20",
+        "eth2": "10.0.12.20"
+      },
+      "ports": {
+        "ml": 4444,
+        "ts": 5555,
+        "api": 8080
+      }
+    },
+    "rover-01": {
+        "ip": "10.0.0.20",
+        "mother_interface": "eth0"
+        },
+    "rover-02": {
+        "ip": "10.0.2.20",
+        "mother_interface": "eth0"
+        },
+    "rover-03": {
+        "ip": "10.0.8.20",
+        "mother_interface": "eth1"
+        },
+    "rover-04": {
+        "ip": "10.0.9.20",
+        "mother_interface": "eth1"
+        },
+    "ground-control": {
+      "ip": "10.0.11.20",
+      "mother_interface": "eth2"
+    }
+}

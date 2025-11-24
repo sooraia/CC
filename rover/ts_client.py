@@ -34,7 +34,6 @@ class TelemetrySystemClient:
         message = TSMessage(
             rover_id=telemetry_dict['rover_id'],
             position=telemetry_dict['position'],
-            planet=telemetry_dict['planet'],
             state=telemetry_dict['state'],
             power_level=telemetry_dict['power_level'],
             orientation=telemetry_dict['orientation'],
