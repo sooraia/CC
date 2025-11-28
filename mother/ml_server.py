@@ -4,7 +4,8 @@ import time
 from common.mission_link import MissionLink
 from common.ml_protocol import MLReport, MLRequest, MLMission, MLAck
 from mother.mission_generator import MissionGenerator
-from mother import Database
+from mother.mission_generator import get_mission
+from common.Database import Database
 
 class MLServerHandler(MissionLink):
 
@@ -35,7 +36,7 @@ class MLServerHandler(MissionLink):
             msg.print_mission()#!!!!!!!!!!!!!!!!!debug
             self.send_packet(msg, addr)
             self._add_to_pending_acks(msg, addr)
-            self.database.add_mission(packet.rover_id, mission)
+            self.database.add_mission(msg, packet.rover_id)
             return True
         
         elif isinstance(packet, MLReport):
@@ -65,3 +66,10 @@ class MLServerHandler(MissionLink):
         receiver_thread = threading.Thread(target=self._receive_packets_loop)
         receiver_thread.daemon = True
         receiver_thread.start()
+        print("ML server running...")
+
+
+if __name__ == "__main__":
+    db = Database()
+    server = MLServerHandler(db)
+    server.run_server()

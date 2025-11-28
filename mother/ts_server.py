@@ -2,6 +2,7 @@ import socket
 import threading
 import time
 from common.ts_protocol import TS_LENGTH, SerializationException, TSMessage
+from common.Database import Database
 
 class TelemetrySystemServer:
 
@@ -46,8 +47,8 @@ class TelemetrySystemServer:
     def _handle_message(self, data: bytes, addr: tuple):
         try:
             message = TSMessage.deserialize_telemetry(data)
-            #message.print_telemetry()
-            #self.database.register_telemetry(message)!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            message.print_telemetry()
+            self.database.register_telemetry(message)
         except SerializationException as e:
             print(f'Ignoring SerializationException: {e}')
 
@@ -56,3 +57,9 @@ class TelemetrySystemServer:
         if self.socket:
             self.socket.close()
             self.socket = None
+            
+if __name__ == "__main__":
+    db = Database()
+    server = TelemetrySystemServer(db, host="0.0.0.0", port=5001)
+    server.start_server()
+    

@@ -1,6 +1,7 @@
 from threading import Thread
 from common.__init__ import TS_DEFAULT_PORT, ML_DEFAULT_PORT
-from mother.Database import Database
+from common.__init__ import TS_DEFAULT_PORT
+from common.Database import Database
 import sys
 from mother.ml_server import MLServerHandler
 from mother.ts_server import TelemetrySystemServer
