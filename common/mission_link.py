@@ -1,4 +1,3 @@
-
 import socket
 import time
 
@@ -19,7 +18,7 @@ class MissionLink:
         self.socket.sendto(data, dest_addr)
 
     def _add_to_pending_acks(self, packet : MLMessage, dest_addr: tuple):
-        self.pending_acks[(packet.mission_id, packet.seq_num)] = (packet, 0, dest_addr)
+        self.pending_acks[(packet.mission_id, packet.sequence_num)] = (packet, 0, dest_addr)
 
     def receive_packet(self): #retorna True se pacote for válido(ack em pending acks/mission para rover/...), False caso contrário
         try:

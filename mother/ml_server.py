@@ -3,7 +3,7 @@ import time
 from common.mission_link import MissionLink
 from common.ml_protocol import MLReport, MLRequest, MLMission, MLAck
 from mother.mission_generator import get_mission
-from mother import Database
+from common.Database import Database
 
 class MLServerHandler(MissionLink):
 
@@ -27,11 +27,11 @@ class MLServerHandler(MissionLink):
                 )
             self.send_packet(msg, addr)
             self._add_to_pending_acks(msg)
-            self.database.add_mission(mission)
+            self.database.add_mission(msg, packet.rover_id) #estava mission 
             return True
         
         elif isinstance(packet, MLReport):
-            self.database.update_mission(packet.mission_id)
+            self.database.update_mission(packet) #estava packet.mission_id
             ack = MLAck(packet.mission_id, time.now(), packet.sequence_num)
             self.send_packet(ack, addr)
             return True
@@ -59,3 +59,10 @@ class MLServerHandler(MissionLink):
         receiver_thread = threading.Thread(target=self._receive_packets_loop)
         receiver_thread.daemon = True
         receiver_thread.start()
+        print("ML server running...")
+
+
+if __name__ == "__main__":
+    db = Database()
+    server = MLServerHandler(db)
+    server.run_server()
