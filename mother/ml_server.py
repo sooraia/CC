@@ -1,48 +1,54 @@
+import socket
 import threading
 import time
 from common.mission_link import MissionLink
 from common.ml_protocol import MLReport, MLRequest, MLMission, MLAck
-from mother.mission_generator import get_mission
+from mother.mission_generator import MissionGenerator
 from mother import Database
 
 class MLServerHandler(MissionLink):
 
-    def __init__(self, db : Database):
+    def __init__(self, host: str, port : int, db : Database, mg : MissionGenerator):
         self.database = db
+        self.mission_generator = mg
         self.running = False
+        self.port = port
+
         super().__init__()
+        self.socket.bind((host, port))
 
     def _handle_packet(self, packet, addr):
         if isinstance(packet, MLRequest):
-            mission = get_mission(packet.rover_id) 
+            print(f"Received MLRequest: From {addr[0]}:{addr[1]}")
+            print('\n')
+            mission = self.mission_generator.get_mission(self.database, packet.rover_id) 
             msg = MLMission(
                 area=mission['area'],
                 task=mission['task'], 
                 task_param=mission['task_param'],
                 duration=mission['duration'],
                 update_interval=mission['update_interval'],
-                timestamp=mission['timestamp'],
+                timestamp=time.time(),
                 sequence_num=packet.sequence_num+1,
                 mission_id = mission['mission_id']
                 )
+            msg.print_mission()#!!!!!!!!!!!!!!!!!debug
             self.send_packet(msg, addr)
-            self._add_to_pending_acks(msg)
-            self.database.add_mission(mission)
+            self._add_to_pending_acks(msg, addr)
+            self.database.add_mission(packet.rover_id, mission)
             return True
         
         elif isinstance(packet, MLReport):
+            print(f"Received MLReport: From {addr[0]}:{addr[1]}")
+            print(f"Mission ID: {packet.mission_id}, Progress: {packet.progress}, Status: {packet.status}")
+            print('\n')
             self.database.update_mission(packet.mission_id)
-            ack = MLAck(packet.mission_id, time.now(), packet.sequence_num)
+            ack = MLAck(packet.mission_id, time.time(), packet.sequence_num)
             self.send_packet(ack, addr)
             return True
         
         else:
             return False
-
-    def _check_timeouts_loop(self):
-        while self.running:
-            time.sleep(1)  # verifica a cada 1s**************************
-            self.check_timeouts()
 
     def _receive_packets_loop(self):
         while True:

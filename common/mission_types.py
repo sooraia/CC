@@ -15,7 +15,7 @@ MISSION_TYPES = {
     },
     'I': {  # Captura de imagens
         'name': 'IMAGE_CAPTURE',
-        'params': {'P': 'Panoramic', 'C': 'Infrared', 'M': 'Macro'},
+        'param': {'P': 'Panoramic', 'C': 'Infrared', 'M': 'Macro'},
         'events': {
             '1': 'Capturing Imgage', # 25%
             '2': 'Processing Image', # 50%
@@ -25,7 +25,7 @@ MISSION_TYPES = {
     },
     'E': {  # Análise ambiental
         'name': 'ENVIRONMENTAL_ANALYSIS',
-        'params': {'T': 'Temperature', 'R': 'Radiation', 'P': 'Pressure', 'H': 'Humidity'},
+        'param': {'T': 'Temperature', 'R': 'Radiation', 'P': 'Pressure', 'H': 'Humidity'},
         'events': {
             '1': 'Initial Readings',
             '2': 'Analysing Data',
@@ -35,7 +35,7 @@ MISSION_TYPES = {
     },
     'D': {  # Instalação de equipamentos
         'name': 'EQUIPMENT_DEPLOYMENT', 
-        'params': {'S': 'Seismometer', 'W': 'Weather Station', 'M': 'Marker', 'C': 'Communication Relay'},
+        'param': {'S': 'Seismometer', 'W': 'Weather Station', 'M': 'Marker', 'C': 'Communication Relay'},
         'events': {
             '1': 'Positioning Equipment',
             '2': 'Calibrating',
@@ -78,3 +78,12 @@ def get_mission_by_name(mission_name: str) -> tuple:
         if data['name'] == mission_name:
             return code, data
     return None, None
+
+def get_param_code(mission_code: str, param_name: str) -> str:
+    mission_data = MISSION_TYPES.get(mission_code, {})
+    params = mission_data.get('param', {})
+    
+    for code, name in params.items():
+        if name == param_name:
+            return code
+    return '0'  # Código default se não encontrar

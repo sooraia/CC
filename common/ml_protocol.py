@@ -109,8 +109,6 @@ def validate_polar_coords(coord):
 
 
 class MLMission(MLMessage):  # mensagem ML do tipo Missão
-    _mission_counter: int = 0 
-    _counter_lock = threading.Lock()
 
     def __init__(
         self,
@@ -120,35 +118,27 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
         duration: int,
         update_interval: int,
         timestamp: int,
-        sequence_num: int = 0,
-        mission_id: str = None
+        mission_id: str,
+        sequence_num: int = 0
     ):
         super().__init__(timestamp, sequence_num)
 
-        if mission_id is None:
-            self.mission_id = self.get_mission_id()
-        else:
-            self.mission_id = mission_id 
+        self.mission_id = mission_id 
         
         if (
             not isinstance(area, list)
             or len(area) != 2
-            or validate_polar_coords(area[0])
-            or validate_polar_coords(area[1])
         ):
             raise ValueError("Invalid Area")
         
+        if(task_param is None):
+            task_param = '0'
+
         self.area = area  # [[r1,a1],[r2,a2]]
         self.task = task              # 1 byte
         self.task_param = task_param  # 1 byte
         self.duration = duration
         self.update_interval = update_interval
-
-    @classmethod
-    def get_mission_id(cls):
-        with cls._counter_lock:
-            cls._mission_counter += 1
-            return f"M-{cls._mission_counter:03d}"  # capped a 999 missões
 
     def serialize_payload(self) -> bytes:
         res = self.mission_id.encode('utf-8')  # 5 bytes M-xxx
@@ -191,9 +181,17 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
             duration,
             update_interval,
             timestamp,
-            sequence_num,
-            mission_id
+            mission_id,
+            sequence_num
         )
+    
+    def print_mission(self):
+        print(f"Mission ID: {self.mission_id}")
+        print(f"Area: {self.area}")
+        print(f"Task: {self.task}")
+        print(f"Task Param: {self.task_param}")
+        print(f"Duration: {self.duration} seconds")
+        print(f"Update Interval: {self.update_interval} seconds")
 
 
 class MLReport(MLMessage):  # mensagem ML do tipo Report (atualização)
@@ -204,6 +202,7 @@ class MLReport(MLMessage):  # mensagem ML do tipo Report (atualização)
         self.progress = progress       # 0-100
 
     def serialize_payload(self) -> bytes:
+        self.print_report()
         res = self.mission_id.encode('utf-8')      # 5 bytes
         res += self.status.encode('utf-8')         # 1 byte
         res += self.progress.to_bytes(1, 'big')    # 1 byte
@@ -212,9 +211,14 @@ class MLReport(MLMessage):  # mensagem ML do tipo Report (atualização)
     @classmethod
     def _deserialize_payload(cls, payload: bytes, timestamp: int, sequence_num: int):
         if len(payload) < 7:
-            raise SerializationException("MLReport payload too short")
+            raise SerializationException("MLReport payload too short: {len(payload)} bytes")
         mission_id = payload[0:5].decode('utf-8')
         status = payload[5:6].decode('utf-8')
         progress = int.from_bytes(payload[6:7], 'big')
         return cls(mission_id, status, progress, timestamp, sequence_num)
+    
+    def print_report(self):
+        print(f"Mission ID: {self.mission_id}, number of bytes: {len(self.mission_id.encode('utf-8'))}")
+        print(f"Status: {self.status}, number of bytes: {len(self.status.encode('utf-8'))}")
+        print(f"Progress: {self.progress}%, number of bytes: {len(self.progress.to_bytes(1, 'big'))}")
 

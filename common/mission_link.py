@@ -19,7 +19,7 @@ class MissionLink:
         self.socket.sendto(data, dest_addr)
 
     def _add_to_pending_acks(self, packet : MLMessage, dest_addr: tuple):
-        self.pending_acks[(packet.mission_id, packet.seq_num)] = (packet, 0, dest_addr)
+        self.pending_acks[(packet.mission_id, packet.sequence_num)] = (packet, 0, dest_addr)
 
     def receive_packet(self): #retorna True se pacote for válido(ack em pending acks/mission para rover/...), False caso contrário
         try:
@@ -36,21 +36,36 @@ class MissionLink:
     
     def _handle_ack(self, ack: MLAck):
         if (ack.mission_id, ack.sequence_num) in self.pending_acks:
+            print(f"Received MLAck for Mission ID: {ack.mission_id}, Seq: {ack.sequence_num}")
             del self.pending_acks[(ack.mission_id, ack.sequence_num)]
             return True
         else:
             return False
 
     def check_timeouts(self):
-        for key,(packet, retries, addr) in self.pending_acks:  #!!!!!!!not safe alterar (?)
-            if time.time() - packet.timestamp > ML_TIMEOUT:
-                if(retries==ML_MAX_RETRANSMISSIONS):
-                    pass
-                    #to do
-                else:
-                    packet.timestamp = time.time()
+        current_time = time.time()
+        timed_out = []
+        
+        for key in list(self.pending_acks.keys()):
+            packet, retries, addr = self.pending_acks[key]
+            
+            if current_time - packet.timestamp > ML_TIMEOUT:
+                if retries >= ML_MAX_RETRANSMISSIONS: # adicionar à lista de timed out as que atingiram o max de retries
+                    timed_out.append(key)
+                    print(f"Mission {packet.mission_id} timed out after {ML_MAX_RETRANSMISSIONS} retries")#DEBUG!!!!!!!!!!!!!!!!!!11
+                else:                                   # retransmitir
+                    packet.timestamp = current_time
                     self.send_packet(packet, addr)
                     self.pending_acks[key] = (packet, retries + 1, addr)
+                    print(f"Retransmitting mission {packet.mission_id}, retry {retries + 1}")#DEBUG!!!!!!!!!!!!!!!!!!11
+        
+        for key in timed_out:
+            del self.pending_acks[key]
+
+    def _check_timeouts_loop(self):
+        while self.running:
+            time.sleep(1)  # verifica a cada 1s**************************
+            self.check_timeouts()
 
     def _handle_packet(self, packet: MLMessage, addr: tuple):
         """Processa pacote recebido (implementação específica)"""

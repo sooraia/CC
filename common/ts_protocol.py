@@ -85,10 +85,10 @@ class TSMessage:
     
     def print_telemetry(self):
         print(f'Rover ID: {self.rover_id}')
-        print(f'Position: Distance {self.position[0]} m, Bearing {self.position[1]} degrees')
+        print(f'Position: [ {self.position[0]}, Bearing {self.position[1]} ]')
         print(f'State: {self.state}')
         print(f'Power Level: {self.power_level} %')
         print(f'Orientation: Azimuth {self.orientation[0]} degrees, Elevation {self.orientation[1]} degrees')
         print(f'Temperature: {self.temperature} °C')
-        print(f'Speed: {self.speed} m/s')
+        print(f'Speed: {self.speed} km/h')
         print(f'Direction: {self.direction} degrees')
