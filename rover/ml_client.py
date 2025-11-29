@@ -19,7 +19,6 @@ class MLClientHandler(MissionLink):
         while True:
             retries = 0
             pending_request = False
-            print
             if(self.telemetry.operational_state == 'IDLE'):
                 request = MLRequest(rover_id= self.telemetry.rover_id, timestamp= time.time(), sequence_num=1) #numero de seq começa em 1 para cada "conexão"
                 pending_request = True
@@ -65,7 +64,7 @@ class MLClientHandler(MissionLink):
 
         self.telemetry.go_to_area(self.telemetry.current_mission_area)
 
-        self.telemetry.operational_state = 'ON_MISSION'
+        self.telemetry.operational_state = 'ACTIVE'
 
         execution_thread = threading.Thread(target=self.telemetry.execute_current_mission)
         execution_thread.start()
@@ -81,7 +80,7 @@ class MLClientHandler(MissionLink):
         self._add_to_pending_acks(report, addr)
     
     def _report_sender(self, seq : int, interval : int):
-        while self.telemetry.operational_state == 'ON_MISSION': #só quando chegar ao local da missão ou a caminho também?
+        while self.telemetry.operational_state == 'ACTIVE': #só quando chegar ao local da missão ou a caminho também?
             seq += 1
             self._send_report(seq, self.server_addr)
             time.sleep(interval)
@@ -91,6 +90,10 @@ class MLClientHandler(MissionLink):
             self._send_report(seq, self.server_addr)
 
         self.telemetry.reset_mission_paramaters()
+
+    def _receive_packets_loop(self):
+        while self.running:
+            self.receive_packet()
 
     def run_client(self, server_addr : tuple):
         self.running= True
@@ -102,3 +105,8 @@ class MLClientHandler(MissionLink):
         timeout_thread = threading.Thread(target=self._check_timeouts_loop)
         timeout_thread.daemon = True
         timeout_thread.start()
+
+        #start receiver thread
+        receiver_thread = threading.Thread(target=self._receive_packets_loop)
+        receiver_thread.daemon = True
+        receiver_thread.start()

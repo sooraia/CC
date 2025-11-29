@@ -1,6 +1,6 @@
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from common.Database import Database
+from .Database import Database
 
 db = Database()
 

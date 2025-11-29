@@ -3,7 +3,7 @@
   <networks/>
   <devices>
     <device id="1" name="nave-mae" icon="" canvas="1" type="PC" class="" image="" compose="" compose_name="">
-      <position x="496.68182373046875" y="318.9224548339844" lat="47.57626743552863" lon="-122.12563156564596" alt="2.0"/>
+      <position x="586.2457275390625" y="304.99029541015625" lat="47.5763940809747" lon="-122.1244247162905" alt="2.0"/>
       <services>
         <service name="DefaultRoute"/>
       </services>
@@ -17,9 +17,9 @@
     <device id="3" name="n3" icon="" canvas="1" type="router" class="" image="" compose="" compose_name="">
       <position x="238.133056640625" y="426.0455017089844" lat="47.57529366052357" lon="-122.12911544028347" alt="2.0"/>
       <services>
+        <service name="OSPFv2"/>
         <service name="zebra"/>
         <service name="IPForward"/>
-        <service name="OSPFv2"/>
         <service name="OSPFv3"/>
       </services>
     </device>
@@ -44,45 +44,45 @@
     <device id="7" name="n7" icon="" canvas="1" type="router" class="" image="" compose="" compose_name="">
       <position x="682.1318359375" y="486.6463317871094" lat="47.57474277596173" lon="-122.12313267693987" alt="2.0"/>
       <services>
+        <service name="OSPFv2"/>
         <service name="zebra"/>
         <service name="IPForward"/>
-        <service name="OSPFv2"/>
         <service name="OSPFv3"/>
       </services>
     </device>
     <device id="8" name="n8" icon="" canvas="1" type="router" class="" image="" compose="" compose_name="">
       <position x="879.9257202148438" y="330.4932861328125" lat="47.57616225468115" lon="-122.1204674578996" alt="2.0"/>
       <services>
+        <service name="OSPFv2"/>
         <service name="zebra"/>
         <service name="IPForward"/>
-        <service name="OSPFv2"/>
         <service name="OSPFv3"/>
       </services>
     </device>
     <device id="9" name="n9" icon="" canvas="1" type="router" class="" image="" compose="" compose_name="">
       <position x="1083.9656982421875" y="477.2771301269531" lat="47.57482794594202" lon="-122.1177180744371" alt="2.0"/>
       <services>
+        <service name="OSPFv2"/>
         <service name="zebra"/>
         <service name="IPForward"/>
-        <service name="OSPFv2"/>
         <service name="OSPFv3"/>
       </services>
     </device>
     <device id="10" name="n10" icon="" canvas="1" type="router" class="" image="" compose="" compose_name="">
       <position x="890.3359375" y="682.358154296875" lat="47.57296364158182" lon="-122.12032718304012" alt="2.0"/>
       <services>
+        <service name="OSPFv2"/>
         <service name="zebra"/>
         <service name="IPForward"/>
-        <service name="OSPFv2"/>
         <service name="OSPFv3"/>
       </services>
     </device>
     <device id="11" name="n11" icon="" canvas="1" type="router" class="" image="" compose="" compose_name="">
       <position x="568.66064453125" y="144.150634765625" lat="47.57785611574873" lon="-122.12466167052308" alt="2.0"/>
       <services>
+        <service name="OSPFv2"/>
         <service name="zebra"/>
         <service name="IPForward"/>
-        <service name="OSPFv2"/>
         <service name="OSPFv3"/>
       </services>
     </device>
@@ -183,7 +183,7 @@
     <configuration name="checksums" value="0"/>
   </session_options>
   <session_metadata>
-    <configuration name="shapes" value="[{&quot;canvas&quot;: 1, &quot;type&quot;: &quot;oval&quot;, &quot;iconcoords&quot;: [142.88330641723175, 511.63081679883305, 747.7161330703425, 945.7363051195683], &quot;label&quot;: &quot;Planeta&quot;, &quot;fontfamily&quot;: &quot;Arial&quot;, &quot;fontsize&quot;: 12, &quot;labelcolor&quot;: &quot;#000000&quot;, &quot;color&quot;: &quot;#CFCFFF&quot;, &quot;border&quot;: &quot;#000000&quot;, &quot;width&quot;: 0, &quot;bold&quot;: false, &quot;italic&quot;: false, &quot;underline&quot;: false}]"/>
+    <configuration name="shapes" value="[{&quot;canvas&quot;: 1, &quot;type&quot;: &quot;oval&quot;, &quot;iconcoords&quot;: [142.8833064172317, 511.630816798833, 747.7161330703426, 945.7363051195684], &quot;label&quot;: &quot;Planeta&quot;, &quot;fontfamily&quot;: &quot;Arial&quot;, &quot;fontsize&quot;: 12, &quot;labelcolor&quot;: &quot;#000000&quot;, &quot;color&quot;: &quot;#CFCFFF&quot;, &quot;border&quot;: &quot;#000000&quot;, &quot;width&quot;: 0, &quot;bold&quot;: false, &quot;italic&quot;: false, &quot;underline&quot;: false}]"/>
     <configuration name="edges" value="[]"/>
     <configuration name="hidden" value="[]"/>
     <configuration name="canvas" value="{&quot;gridlines&quot;: true, &quot;canvases&quot;: [{&quot;id&quot;: 1, &quot;wallpaper&quot;: null, &quot;wallpaper_style&quot;: 1, &quot;fit_image&quot;: false, &quot;dimensions&quot;: [1250, 1000]}]}"/>

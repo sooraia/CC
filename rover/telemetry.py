@@ -58,13 +58,59 @@ class RoverTelemetry:
         }
     
     def update_telemetry_loop(self):
-        pass
+        last_update = time.time()
+        
+        while True:
+            current_time = time.time()
+            delta_time = current_time - last_update
+            last_update = current_time
+            
+            with self.lock:
+                self._update_temperature(current_time)
+                self._update_power_level(delta_time)
+                if self.operational_state == 'IDLE':
+                    self._optimize_solar_orientation(current_time)
+                self._add_random_variations()
+                
+            time.sleep(1)  # Atualizar a cada segundo
+
+
+    def _update_temperature(self, current_time):
+        hour_of_day = (current_time % 86400) / 3600  # 0-23 horas
+        base_temp = 10 + 19 * math.sin((hour_of_day - 6) * math.pi / 12)
+        variation = random.uniform(-2, 2)
+        self.temperature = round(base_temp + variation, 1)
+
+    def _update_power_level(self, delta_time):
+        current_power = int(self.power_level)
+        base_consumption = 0.5  # % por minuto
+        
+        # Consumo por estado operacional
+        if self.operational_state == 'ACTIVE':
+            state_consumption = 2.0  # % por minuto
+        elif self.speed > 0:
+            state_consumption = 1.5 + (self.speed / speed_limit) * 1.0  # % por minuto
+        else:
+            state_consumption = 0.5  # % por minuto
+        
+        # Geração solar (depende da orientação e "hora do dia")
+        solar_efficiency = self._calculate_solar_efficiency()
+        solar_generation = solar_efficiency * 3.0  # % por minuto
+        
+        # Balanço líquido (consumo - geração)
+        net_change = (base_consumption + state_consumption - solar_generation) * (delta_time / 60)
+        
+        new_power = current_power - net_change
+        
+        # Limitar entre 0 e 100
+        new_power = max(0, min(100, new_power))
+        
+        self.power_level = str(int(new_power)).zfill(3)
         #bateria
 
         #if self.operational_state == 'IDLE':
             #adjust orientation to capture the most energy
-
-        #direção, velocidade -> implementar lógica separadamente
+        #power_level -> diminui + quando em movimento (proporcional à velocidade), se estiver parado aumenta (proporcional à orientação solar), mas diminui sempre um pouco (consumo base)
         #temperature -> sin em função da hora do dia
 
     def go_to_pos(self, target):

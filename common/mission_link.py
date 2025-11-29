@@ -35,7 +35,9 @@ class MissionLink:
     
     def _handle_ack(self, ack: MLAck):
         if (ack.mission_id, ack.sequence_num) in self.pending_acks:
+            print('------------------------------------------------------')
             print(f"Received MLAck for Mission ID: {ack.mission_id}, Seq: {ack.sequence_num}")
+            print('------------------------------------------------------')
             del self.pending_acks[(ack.mission_id, ack.sequence_num)]
             return True
         else:
@@ -56,7 +58,7 @@ class MissionLink:
                     packet.timestamp = current_time
                     self.send_packet(packet, addr)
                     self.pending_acks[key] = (packet, retries + 1, addr)
-                    print(f"Retransmitting mission {packet.mission_id}, retry {retries + 1}")#DEBUG!!!!!!!!!!!!!!!!!!11
+                    print(f"Retransmitting packet from mission {packet.mission_id}, retry {retries + 1}, seq {packet.sequence_num}")#DEBUG!!!!!!!!!!!!!!!!!!11
         
         for key in timed_out:
             del self.pending_acks[key]

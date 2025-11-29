@@ -4,8 +4,7 @@ import time
 from common.mission_link import MissionLink
 from common.ml_protocol import MLReport, MLRequest, MLMission, MLAck
 from mother.mission_generator import MissionGenerator
-from mother.mission_generator import get_mission
-from common.Database import Database
+from .Database import Database
 
 class MLServerHandler(MissionLink):
 
@@ -43,8 +42,11 @@ class MLServerHandler(MissionLink):
             print(f"Received MLReport: From {addr[0]}:{addr[1]}")
             print(f"Mission ID: {packet.mission_id}, Progress: {packet.progress}, Status: {packet.status}")
             print('\n')
-            self.database.update_mission(packet.mission_id)
+            self.database.update_mission(packet)
             ack = MLAck(packet.mission_id, time.time(), packet.sequence_num)
+            print('------------------------------------------------------')
+            print('Sending MLAck for Mission ID:', packet.mission_id, 'to', addr[0], ':', addr[1])
+            print('------------------------------------------------------')
             self.send_packet(ack, addr)
             return True
         

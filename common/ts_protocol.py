@@ -5,7 +5,7 @@ import struct
 TS_LENGTH = 36 #(bytes)
 
 ROVER_STATE = { #Códigos para serializar os estados do rover
-    'M' : 'ON_MISSION',
+    'M' : 'ACTIVE',
     'c' : 'ON_THE_WAY', # a caminho ??
     'I' : 'IDLE',
     'E' : 'ERROR'

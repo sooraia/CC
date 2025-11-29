@@ -2,7 +2,7 @@ import socket
 import threading
 import time
 from common.ts_protocol import TS_LENGTH, SerializationException, TSMessage
-from common.Database import Database
+from .Database import Database
 
 class TelemetrySystemServer:
 

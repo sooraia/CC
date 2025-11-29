@@ -1,9 +1,8 @@
 import time
 import threading
-from .mission_types import get_mission_name, get_param_name, get_event_name
-from .ml_protocol import MLMission
+from common.mission_types import get_mission_name, get_param_name, get_event_name
+from common.ml_protocol import MLMission
 
-#exemplo de database aula teórica
 class Database:
     dados : dict
     quantos : int
@@ -45,7 +44,7 @@ class Database:
             self.lock.acquire()
             if "rovers" not in self.dados:
                 return []
-            return [rover for rover in self.dados["rovers"].values() if rover.get("state") in ["ON_MISSION","ON_THE_WAY"]]
+            return [rover for rover in self.dados["rovers"].values() if rover.get("state") in ["ACTIVE","ON_THE_WAY"]]
         finally:
             self.lock.release()
 
@@ -133,7 +132,7 @@ class Database:
             missions = self.dados.get("missions", {}).values()
             result = []
             for m in missions: 
-                if m["status"] in ("IN_PROGRESS", "COMPLETED"): #se quiser adicionar as missoes acabadas de criar mas aiinda nao ativas, adicionar "ACTIVE"
+                if m["status"] in ("IN_PROGRESS", "COMPLETED"):
                     result.append(m)
             return result
         finally:
@@ -144,6 +143,13 @@ class Database:
         try:
             self.lock.acquire()
             return self.dados.get("last_telemetry")
+        finally:
+            self.lock.release()
+
+    def get_rover_telemetry(self, rover_id: str):
+        try:
+            self.lock.acquire()
+            return self.dados["rovers"][rover_id]
         finally:
             self.lock.release()
 

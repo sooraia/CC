@@ -12,7 +12,7 @@ ip route add default via 10.0.10.1 table rt_eth1
 ip route add 10.0.12.0/24 dev eth2 src 10.0.12.20 table rt_eth2
 ip route add default via 10.0.12.1 table rt_eth2
 
-# regras por origem
+# regras por origemb
 ip rule add from 10.0.1.20/32 table rt_eth0
 ip rule add from 10.0.10.20/32 table rt_eth1
 ip rule add from 10.0.12.20/32 table rt_eth2
