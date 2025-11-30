@@ -35,6 +35,7 @@ class RoverTelemetry:
         self.current_mission_progress = 0
 
     def reset_mission_paramaters(self):
+        self.operational_state = 'IDLE'
         self.current_mission_id = None
         self.current_mission_area = None
         self.current_mission_task = None
@@ -113,6 +114,16 @@ class RoverTelemetry:
         #power_level -> diminui + quando em movimento (proporcional à velocidade), se estiver parado aumenta (proporcional à orientação solar), mas diminui sempre um pouco (consumo base)
         #temperature -> sin em função da hora do dia
 
+    def _calculate_solar_efficiency(self):
+        # Simples modelo: eficiência máxima quando orientação solar é 45° em elevação e direção para o sul (180°)
+        elev_angle = self.solar_orientation[1]
+        dir_angle = self.solar_orientation[0]
+        
+        elev_efficiency = max(0, math.cos(math.radians(elev_angle - 45)))
+        dir_efficiency = max(0, math.cos(math.radians(dir_angle - 180)))
+        
+        return elev_efficiency * dir_efficiency
+
     def go_to_pos(self, target):
         dx = target[0] - self.position[0]
         dy = target[1] - self.position[1]
@@ -186,7 +197,7 @@ class RoverTelemetry:
                     if random.random() < prob:
                         self.current_mission_status = event
                         self.current_mission_progress = 100
-                        self.telemetry.operational_state = 'IDLE'
+                        self.operational_state = 'IDLE'
                         print(f"debug: erro: {self.current_mission_status}")
                         return
                 elif self.current_mission_progress >= event_progress:
@@ -198,5 +209,4 @@ class RoverTelemetry:
             
         self.current_mission_progress = 100
         self.current_mission_status = '3'  # missão concluída
-        self.operational_state = 'IDLE'
         print(f"mission completed")

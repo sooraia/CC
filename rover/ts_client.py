@@ -40,7 +40,6 @@ class TelemetrySystemClient:
             temperature=telemetry_dict['temperature'],
             speed=telemetry_dict['speed'],
             direction=telemetry_dict['direction'])
-        #message.print_telemetry()
         data = message.serialize_telemetry()
         self.socket.send(data)
 
