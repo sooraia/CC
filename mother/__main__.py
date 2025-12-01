@@ -6,6 +6,7 @@ import sys
 from mother.ml_server import MLServerHandler
 from mother.ts_server import TelemetrySystemServer
 from mother.mission_generator import MissionGenerator
+from mother.api_server import run_api_server
 
 def main(argv: list[str]) -> None:
     threads : list = list()
@@ -17,6 +18,8 @@ def main(argv: list[str]) -> None:
 
     threads.append(Thread(target=telemetrysystem.start_server))
     threads.append(Thread(target=missionlink.run_server))
+    threads.append(Thread(target=run_api_server, args=('0.0.0.0', 5000, database)))
+
     print("Servers created.\n")
     for thread in threads:
         thread.start()

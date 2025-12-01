@@ -2,9 +2,13 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from .Database import Database
 
-db = Database()
-
 class MotherRequestHandler(BaseHTTPRequestHandler):
+    db = None
+
+    @classmethod
+    def set_database(self, database: Database):
+        self.db = database
+
     def _send_json(self, obj, status=200):
         data = json.dumps(obj).encode("utf-8")
         self.send_response(status)
@@ -15,11 +19,11 @@ class MotherRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/rovers/active":
-            self._send_json(db.get_active_rovers())
+            self._send_json(self.db.get_active_rovers())
         elif self.path == "/missions":
-            self._send_json(db.get_missions())
+            self._send_json(self.db.get_missions())
         elif self.path == "/telemetry":
-            data = db.get_last_telemetry()
+            data = self.db.get_last_telemetry()
             if data is None:
                 self._send_json({"error": "No telemetry for this rover"}, status=404)
             else:
@@ -27,10 +31,8 @@ class MotherRequestHandler(BaseHTTPRequestHandler):
         else:
             self._send_json({"error": "Not found"}, status=404)
 
-def run_server(host="0.0.0.0", port=5000):
+def run_api_server(host, port, database: Database):
+    MotherRequestHandler.set_database(database)
     server = HTTPServer((host, port), MotherRequestHandler)
     print(f"Serving HTTP on {host}:{port}")
     server.serve_forever()
-
-if __name__ == "__main__":
-    run_server()

@@ -47,6 +47,9 @@ class TelemetrySystemServer:
     def _handle_message(self, data: bytes, addr: tuple):
         try:
             message = TSMessage.deserialize_telemetry(data)
+            # print("....................................")
+            # message.print_telemetry()
+            # print("....................................")
             self.database.register_telemetry(message)
         except SerializationException as e:
             print(f'Ignoring SerializationException: {e}')

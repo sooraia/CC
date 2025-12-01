@@ -10,7 +10,11 @@ class Database:
 
 
     def __init__(self):
-        self.dados = dict()
+        self.dados = {
+            "rovers": {},#rover_id >> state
+            "last_telemetries": {}, # rover_id ->> telemetry_dict
+            "missions": {} # mission_id >> mission_dict,
+        }
         self.quantos = 0
         self.lock = threading.Lock()
     
@@ -44,7 +48,7 @@ class Database:
             self.lock.acquire()
             if "rovers" not in self.dados:
                 return []
-            return [rover for rover in self.dados["rovers"].values() if rover.get("state") in ["ACTIVE","ON_THE_WAY"]]
+            return self.dados["rovers"]
         finally:
             self.lock.release()
 
@@ -58,14 +62,14 @@ class Database:
             "orientation": msg.orientation,
             "temperature": msg.temperature,
             "speed": msg.speed,
-            "direction": msg.direction,
+            "direction": msg.direction
         }
         try:
             self.lock.acquire()
             if "rovers" not in self.dados:
                 self.dados["rovers"] = {}
-            self.dados["rovers"][msg.rover_id] = telemetry_dict
-            self.dados["last_telemetry"] = telemetry_dict #para a função da ultima telemetria
+            self.dados["rovers"][msg.rover_id] = msg.state
+            self.dados["last_telemetries"][msg.rover_id] = telemetry_dict #para a função da ultima telemetria
         finally:
             self.lock.release()
 
@@ -93,8 +97,6 @@ class Database:
         }
         try:
             self.lock.acquire()
-            if "missions" not in self.dados:
-                self.dados["missions"] = {}
             self.dados["missions"][mission_id] = mission_dict
         finally:
             self.lock.release()
@@ -129,12 +131,8 @@ class Database:
     def get_missions(self):
         try:
             self.lock.acquire()
-            missions = self.dados.get("missions", {}).values()
-            result = []
-            for m in missions: 
-                if m["status"] in ("IN_PROGRESS", "COMPLETED"):
-                    result.append(m)
-            return result
+            missions_dict = self.dados.get("missions", {})
+            return missions_dict
         finally:
             self.lock.release()
 
@@ -142,14 +140,14 @@ class Database:
     def get_last_telemetry(self):
         try:
             self.lock.acquire()
-            return self.dados.get("last_telemetry")
+            return self.dados.get("last_telemetries")
         finally:
             self.lock.release()
 
     def get_rover_telemetry(self, rover_id: str):
         try:
             self.lock.acquire()
-            return self.dados["rovers"][rover_id]
+            return self.dados["last_telemetries"][rover_id]
         finally:
             self.lock.release()
 

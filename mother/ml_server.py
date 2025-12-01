@@ -19,7 +19,7 @@ class MLServerHandler(MissionLink):
 
     def _handle_packet(self, packet, addr):
         if isinstance(packet, MLRequest):
-            print(f"Received MLRequest: From {addr[0]}:{addr[1]}")
+            #print(f"Received MLRequest: From {addr[0]}:{addr[1]}")
             print('\n')
             mission = self.mission_generator.get_mission(self.database, packet.rover_id) 
             msg = MLMission(
@@ -39,14 +39,14 @@ class MLServerHandler(MissionLink):
             return True
         
         elif isinstance(packet, MLReport):
-            print(f"Received MLReport: From {addr[0]}:{addr[1]}")
-            print(f"Mission ID: {packet.mission_id}, Progress: {packet.progress}, Status: {packet.status}")
-            print('\n')
+            # print(f"Received MLReport: From {addr[0]}:{addr[1]}")
+            # print(f"Mission ID: {packet.mission_id}, Progress: {packet.progress}, Status: {packet.status}")
+            # print('\n')
             self.database.update_mission(packet)
             ack = MLAck(packet.mission_id, time.time(), packet.sequence_num)
-            print('------------------------------------------------------')
-            print('Sending MLAck for Mission ID:', packet.mission_id, 'to', addr[0], ':', addr[1])
-            print('------------------------------------------------------')
+            # print('------------------------------------------------------')
+            # print('Sending MLAck for Mission ID:', packet.mission_id, 'to', addr[0], ':', addr[1])
+            # print('------------------------------------------------------')
             self.send_packet(ack, addr)
             return True
         

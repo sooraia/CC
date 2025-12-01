@@ -4,6 +4,7 @@ import time
 import math
 from typing import List, Tuple
 from common.mission_types import MISSION_TYPES, get_mission_by_name, get_event_name, get_mission_name, get_param_name
+
 speed_limit = 10000 #200 m/h
 
 class RoverTelemetry:
@@ -63,18 +64,16 @@ class RoverTelemetry:
         
         while True:
             current_time = time.time()
-            delta_time = current_time - last_update
+            time_dif = current_time - last_update
             last_update = current_time
             
             with self.lock:
                 self._update_temperature(current_time)
-                self._update_power_level(delta_time)
+                self._update_power_level(time_dif, current_time)
                 if self.operational_state == 'IDLE':
                     self._optimize_solar_orientation(current_time)
-                self._add_random_variations()
                 
-            time.sleep(1)  # Atualizar a cada segundo
-
+            time.sleep(1)
 
     def _update_temperature(self, current_time):
         hour_of_day = (current_time % 86400) / 3600  # 0-23 horas
@@ -82,47 +81,54 @@ class RoverTelemetry:
         variation = random.uniform(-2, 2)
         self.temperature = round(base_temp + variation, 1)
 
-    def _update_power_level(self, delta_time):
+    def _calculate_sun_position(self, current_time):
+        hour = (current_time % 86400) / 3600  # 0-23 horas
+        sun_direction = (hour / 24) * 360  # 0° a 360°
+        
+        sun_elevation = 90 * math.sin(math.radians((hour - 6) * 15))  # 6h=0°, 12h=90°, 18h=0°
+        sun_elevation = max(0, min(90, sun_elevation))  # Limitar entre 0-90°
+        return sun_direction, sun_elevation
+
+    def _panel_efficiency(self, current_time):
+        sun_direction, sun_elevation = self._calculate_sun_position(current_time)
+        
+        if sun_elevation <= 0: #(noite)
+            return 0.0
+        
+        direction_diff = abs(self.solar_orientation[0] - sun_direction)
+        direction_diff = min(direction_diff, 360 - direction_diff)
+        direction_efficiency = 1.0 - (direction_diff / 180.0)
+        
+        tilt_diff = abs(self.solar_orientation[1] - sun_elevation) #eficiência da inclinação
+        tilt_efficiency = 1.0 - (tilt_diff / 90.0)
+        
+        solar_intensity = sun_elevation / 90.0 #intensidade segundo a elevação
+        
+        efficiency = direction_efficiency * tilt_efficiency * solar_intensity
+        return max(0.0, efficiency)
+
+    def _update_power_level(self, delta_time, current_time):
         current_power = int(self.power_level)
-        base_consumption = 0.5  # % por minuto
+        base_consumption = 0.5  # %/min
         
-        # Consumo por estado operacional
-        if self.operational_state == 'ACTIVE':
-            state_consumption = 2.0  # % por minuto
+        if self.operational_state == 'ACTIVE': #consumo maior quando active
+            state_consumption = 2.0
         elif self.speed > 0:
-            state_consumption = 1.5 + (self.speed / speed_limit) * 1.0  # % por minuto
+            state_consumption = 1.5 + (self.speed / speed_limit) * 1.0
         else:
-            state_consumption = 0.5  # % por minuto
+            state_consumption = 0.5
         
-        # Geração solar (depende da orientação e "hora do dia")
-        solar_efficiency = self._calculate_solar_efficiency()
-        solar_generation = solar_efficiency * 3.0  # % por minuto
+        solar_efficiency= self._panel_efficiency(current_time)
+        solar_generation= solar_efficiency *3.0  #% /min
         
-        # Balanço líquido (consumo - geração)
-        net_change = (base_consumption + state_consumption - solar_generation) * (delta_time / 60)
+        dif = (base_consumption + state_consumption -solar_generation) *(delta_time/60)
+        power = max(0, min(100, current_power -dif))
         
-        new_power = current_power - net_change
+        self.power_level = str(int(power)).zfill(3)
         
-        # Limitar entre 0 e 100
-        new_power = max(0, min(100, new_power))
-        
-        self.power_level = str(int(new_power)).zfill(3)
-        #bateria
-
-        #if self.operational_state == 'IDLE':
-            #adjust orientation to capture the most energy
-        #power_level -> diminui + quando em movimento (proporcional à velocidade), se estiver parado aumenta (proporcional à orientação solar), mas diminui sempre um pouco (consumo base)
-        #temperature -> sin em função da hora do dia
-
-    def _calculate_solar_efficiency(self):
-        # Simples modelo: eficiência máxima quando orientação solar é 45° em elevação e direção para o sul (180°)
-        elev_angle = self.solar_orientation[1]
-        dir_angle = self.solar_orientation[0]
-        
-        elev_efficiency = max(0, math.cos(math.radians(elev_angle - 45)))
-        dir_efficiency = max(0, math.cos(math.radians(dir_angle - 180)))
-        
-        return elev_efficiency * dir_efficiency
+    def _optimize_solar_orientation(self, current_time):
+        sun_direction, sun_elevation = self._calculate_sun_position(current_time)
+        self.solar_orientation = [sun_direction, sun_elevation]
 
     def go_to_pos(self, target):
         dx = target[0] - self.position[0]

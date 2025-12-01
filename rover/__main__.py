@@ -32,6 +32,7 @@ def main(argv: list[str]) -> None:
     telemetrysystem.connect(server_address, TS_DEFAULT_PORT)
     print(f"Connected to server at {server_address}:{TS_DEFAULT_PORT}...")
 
+    threads.append(Thread(target=rover_state.update_telemetry_loop))
     threads.append(Thread(target=telemetrysystem.send_telemetry_stream))
     threads.append(Thread(target=missionlink.run_client, args=((server_address, ML_DEFAULT_PORT),)))
 
