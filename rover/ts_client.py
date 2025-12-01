@@ -37,7 +37,8 @@ class TelemetrySystemClient:
             state=telemetry_dict['state'],
             power_level=telemetry_dict['power_level'],
             orientation=telemetry_dict['orientation'],
-            temperature=telemetry_dict['temperature'],
+            ext_temperature=telemetry_dict['ext_temperature'],
+            int_temperature=telemetry_dict['int_temperature'],
             speed=telemetry_dict['speed'],
             direction=telemetry_dict['direction'])
         data = message.serialize_telemetry()

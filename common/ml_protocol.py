@@ -143,10 +143,10 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
     def serialize_payload(self) -> bytes:
         res = self.mission_id.encode('utf-8')  # 5 bytes M-xxx
 
-        res += struct.pack('>f', self.area[0][0])
-        res += struct.pack('>f', self.area[0][1])
-        res += struct.pack('>f', self.area[1][0])
-        res += struct.pack('>f', self.area[1][1])
+        res += struct.pack('>f', round(self.area[0][0], 2))
+        res += struct.pack('>f', round(self.area[0][1], 2))
+        res += struct.pack('>f', round(self.area[1][0], 2))
+        res += struct.pack('>f', round(self.area[1][1], 2))
 
         res += self.task.encode('utf-8')        # 1 byte
         res += self.task_param.encode('utf-8')  # 1 byte
@@ -162,12 +162,10 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
 
         mission_id = payload[0:5].decode('utf-8')
 
-        area = [
-            [struct.unpack('>f', payload[5:9])[0],   # ponto1 distance
-             struct.unpack('>f', payload[9:13])[0]], # ponto1 bearing
-            [struct.unpack('>f', payload[13:17])[0], # ponto2 distance  
-             struct.unpack('>f', payload[17:21])[0]] # ponto2 bearing
-        ]
+        area = [[round(struct.unpack('>f', payload[5:9])[0], 2),
+            round(struct.unpack('>f', payload[9:13])[0], 2)],
+            [round(struct.unpack('>f', payload[13:17])[0], 2),
+            round(struct.unpack('>f', payload[17:21])[0], 2)]]
         
         task = payload[21:22].decode('utf-8')
         task_param = payload[22:23].decode('utf-8')

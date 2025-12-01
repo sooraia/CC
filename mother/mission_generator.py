@@ -3,6 +3,7 @@ import random
 import threading
 import time
 from common.mission_types import MISSION_TYPES
+from common.__init__ import MAX_X, MAX_Y, MIN_X, MIN_Y
 
 class MissionGenerator:
     def __init__(self):
@@ -22,16 +23,14 @@ class MissionGenerator:
         rover_y = rover_telemetry['position'][1]
 
         angulo = random.uniform(0, 2 * math.pi)
-        distancia = random.uniform(0, 5) # área gerada aleatoriamente limitada a uma distância de 5km da sua posição atual
+        distancia = random.uniform(0, 5) # área gerada aleatoriamente e limitada a uma distância de 5km da sua posição atual
 
-        area_x = rover_x + distancia * math.cos(angulo)
-        area_y = rover_y + distancia * math.sin(angulo)
+        area_x = max(MIN_X + 0.5, min(MAX_X - 0.5,rover_x + distancia * math.cos(angulo)))
+        area_y = max(MIN_Y + 0.5, min(MAX_Y - 0.5, rover_y + distancia * math.sin(angulo)))
 
-        area = [ #500x500m
-            [area_x - 0.5, area_y - 0.5],
-            [area_x + 0.5, area_y + 0.5]
-        ]
-
+        area = [[round(max(MIN_X, area_x-0.5),2), round(max(MIN_Y, area_y-0.5),2)],
+            [round(min(MAX_X, area_x +0.5),2), round(min(MAX_Y, area_y+ 0.5),2)]]
+        
         task_param = None
         if MISSION_TYPES[task].get('param'):
             param_keys = list(MISSION_TYPES[task]['param'].keys())

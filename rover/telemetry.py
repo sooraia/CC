@@ -4,6 +4,7 @@ import time
 import math
 from typing import List, Tuple
 from common.mission_types import MISSION_TYPES, get_mission_by_name, get_event_name, get_mission_name, get_param_name
+from common.__init__ import MAX_X, MAX_Y, MIN_X, MIN_Y
 
 speed_limit = 10000 #200 m/h
 
@@ -13,13 +14,16 @@ class RoverTelemetry:
         self.rover_id = rover_id
         
         # Estado inicial
-        self.position = [0.0, 0.0]  # coordenadas cartesianas - distância à base
+        self.position = [
+            random.uniform(MIN_X, MAX_X),
+            random.uniform(MIN_Y, MAX_Y)
+        ]
         self.speed = 0.0  # km/h
-        self.direction = 0.0  # graus (0=Norte, 90=Este)
-        self.power_level = '100'  # 0-100%
-        self.temperature = 20.0 # °C
+        self.direction = 0.0  # graus (0==Norte)
+        self.power_level = 100  # 0-100%
         self.operational_state = 'IDLE'
-        self.solar_orientation = [0.0, 0.0] 
+        self._update_temperature(time.time())
+        self._optimize_solar_orientation(time.time())
         
         #Missão atual
         self.reset_mission_paramaters()
@@ -50,13 +54,14 @@ class RoverTelemetry:
     def get_current_telemetry(self) -> dict:
         return {
             'rover_id' : self.rover_id,
-            'position': self.position.copy(),
+            'position': [round(self.position[0], 2), round(self.position[1], 2)],
             'state': self.operational_state,
-            'power_level': self.power_level,
-            'orientation': self.solar_orientation.copy(),
-            'temperature': self.temperature,
-            'speed': self.speed,
-            'direction': self.direction
+            'power_level': round(self.power_level,2),
+            'orientation': [round(self.solar_orientation[0], 2), round(self.solar_orientation[1], 2)],
+            'ext_temperature': round(self.ext_temperature,2),
+            'int_temperature': round(self.int_temperature,2),
+            'speed': round(self.speed, 2),
+            'direction': round(self.direction,2)
         }
     
     def update_telemetry_loop(self):
@@ -78,8 +83,17 @@ class RoverTelemetry:
     def _update_temperature(self, current_time):
         hour_of_day = (current_time % 86400) / 3600  # 0-23 horas
         base_temp = 10 + 19 * math.sin((hour_of_day - 6) * math.pi / 12)
-        variation = random.uniform(-2, 2)
-        self.temperature = round(base_temp + variation, 1)
+        variation = random.uniform(-0.5, 0.5)
+        self.ext_temperature = base_temp + variation
+
+        if self.operational_state == 'ACTIVE':
+            internal = self.ext_temperature + 15.0
+        elif self.speed > 0:
+            internal = self.ext_temperature + 8.0
+        elif self.operational_state == 'IDLE':
+            internal = self.ext_temperature + 5.0
+
+        self.int_temperature = internal
 
     def _calculate_sun_position(self, current_time):
         hour = (current_time % 86400) / 3600  # 0-23 horas
@@ -124,13 +138,17 @@ class RoverTelemetry:
         dif = (base_consumption + state_consumption -solar_generation) *(delta_time/60)
         power = max(0, min(100, current_power -dif))
         
-        self.power_level = str(int(power)).zfill(3)
+        self.power_level = int(power)
         
     def _optimize_solar_orientation(self, current_time):
         sun_direction, sun_elevation = self._calculate_sun_position(current_time)
+        self.direction = sun_direction
         self.solar_orientation = [sun_direction, sun_elevation]
 
     def go_to_pos(self, target):
+        target[0] = max(MIN_X , min(MAX_X, target[0]))
+        target[1] = max(MIN_Y, min(MAX_Y, target[1]))
+
         dx = target[0] - self.position[0]
         dy = target[1] - self.position[1]
         distance = math.sqrt(dx**2 + dy**2)  # distância ao target
@@ -158,7 +176,7 @@ class RoverTelemetry:
             
             # consumo de energia proporcional à distância percorrida
             power_used = int(progress * 15)  # 15% da bateria para viagem total
-            self.power_level = str(max(0, 100 - power_used)).zfill(3)
+            self.power_level = max(0, 100 - power_used)
             
             time.sleep(1)
     

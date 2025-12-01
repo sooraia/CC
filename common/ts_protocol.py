@@ -2,7 +2,7 @@
 
 import struct
 
-TS_LENGTH = 36 #(bytes)
+TS_LENGTH = 40 #(bytes)
 
 ROVER_STATE = { #Códigos para serializar os estados do rover
     'M' : 'ACTIVE',
@@ -25,34 +25,36 @@ class SerializationException(Exception):
 
 class TSMessage:
 
-    def __init__(self, rover_id, position, state, power_level, orientation, temperature, speed, direction):
+    def __init__(self, rover_id, position, state, power_level, orientation, ext_temperature, int_temperature, speed, direction):
         self.rover_id = rover_id
         self.position = position
         self.state = state
-        self.power_level = power_level
+        self.power_level = str(int(power_level)).zfill(3)
         self.orientation = orientation
-        self.temperature = temperature
+        self.ext_temperature = ext_temperature
+        self.int_temperature = int_temperature
         self.speed = speed 
         self.direction = direction
  
     def serialize_telemetry(self):
-
         res = self.rover_id.encode('utf-8')
-        res += struct.pack('>f', self.position[0])
-        res += struct.pack('>f', self.position[1])
-        res += self.power_level.encode('utf-8') #000-100 3 bytes
-        res += struct.pack('>f', self.orientation[0]) 
-        res += struct.pack('>f', self.orientation[1])
-        res += struct.pack('>f', self.temperature)
-        res += struct.pack('>f', self.speed)
-        res += struct.pack('>f', self.direction)
+        
+        res += struct.pack('>f', round(self.position[0], 2))
+        res += struct.pack('>f', round(self.position[1], 2))
+        res += self.power_level.encode('utf-8')  # 000-100 3 bytes
+        
+        res += struct.pack('>f', round(self.orientation[0], 2)) 
+        res += struct.pack('>f', round(self.orientation[1], 2))
+        res += struct.pack('>f', round(self.ext_temperature, 2))
+        res += struct.pack('>f', round(self.int_temperature, 2))
+        res += struct.pack('>f', round(self.speed, 2))
+        res += struct.pack('>f', round(self.direction, 2))
 
         state_code = get_state_code(self.state)
-        if(state_code is None):
+        if state_code is None:
             raise SerializationException('Invalid state')
         
         res += state_code.encode('utf-8')
-
         return res
 
     @classmethod
@@ -62,33 +64,36 @@ class TSMessage:
         
         rover_id = data[0:4].decode('utf-8')
 
-        pos_dist = struct.unpack('>f', data[4:8])[0]
-        pos_bearing = struct.unpack('>f', data[8:12])[0]
+        pos_dist = round(struct.unpack('>f', data[4:8])[0], 2)
+        pos_bearing = round(struct.unpack('>f', data[8:12])[0], 2) 
         position = [pos_dist, pos_bearing]
 
         power_level = data[12:15].decode('utf-8')
 
-        orient_x = struct.unpack('>f', data[15:19])[0]
-        orient_y = struct.unpack('>f', data[19:23])[0]
+        orient_x = round(struct.unpack('>f', data[15:19])[0], 2)
+        orient_y = round(struct.unpack('>f', data[19:23])[0], 2)
         orientation = [orient_x, orient_y]
         
-        temperature = struct.unpack('>f', data[23:27])[0]
-        speed = struct.unpack('>f', data[27:31])[0]
-        direction = struct.unpack('>f', data[31:35])[0]
+        ext_temperature = round(struct.unpack('>f', data[23:27])[0], 2) 
+        int_temperature = round(struct.unpack('>f', data[27:31])[0], 2) 
         
-        state_code = data[35:36].decode('utf-8')
+        speed = round(struct.unpack('>f', data[31:35])[0], 2)
+        direction = round(struct.unpack('>f', data[35:39])[0], 2)
+        
+        state_code = data[39:40].decode('utf-8')
         state = get_state_name(state_code)
         if state == 'UNKNOWN':
             raise SerializationException('Invalid state')
         
-        return cls(rover_id, position, state, power_level, orientation, temperature, speed, direction)
+        return cls(rover_id, position, state, power_level, orientation, ext_temperature, int_temperature, speed, direction)
     
     def print_telemetry(self):
         print(f'Rover ID: {self.rover_id}')
-        print(f'Position: [ {self.position[0]}, Bearing {self.position[1]} ]')
+        print(f'Position: ({self.position[0]}, {self.position[1]})')
         print(f'State: {self.state}')
         print(f'Power Level: {self.power_level} %')
-        print(f'Orientation: Azimuth {self.orientation[0]} degrees, Elevation {self.orientation[1]} degrees')
-        print(f'Temperature: {self.temperature} °C')
+        print(f'Solar Orientation: ({self.orientation[0]}, {self.orientation[1]})')
+        print(f'External Temperature: {self.ext_temperature} °C')
+        print(f'Internal Temperature: {self.int_temperature} °C')
         print(f'Speed: {self.speed} km/h')
-        print(f'Direction: {self.direction} degrees')
+        print(f'Direction: {self.direction}º')

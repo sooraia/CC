@@ -60,7 +60,8 @@ class Database:
             "state": msg.state,        
             "power_level": msg.power_level,
             "orientation": msg.orientation,
-            "temperature": msg.temperature,
+            "ext_temperature": msg.ext_temperature,
+            "int_temperature": msg.int_temperature,
             "speed": msg.speed,
             "direction": msg.direction
         }
