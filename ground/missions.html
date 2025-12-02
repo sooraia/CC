@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <style>
+        * {
+            overflow: hidden;
+            background-image: linear-gradient(rgb(1,1,1,0.1),rgb(1,1,1,0.2)), url("assets/background.png");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            margin: 0;
+            font-family: 'Lucida Console', 'Courier New', monospace;
+        }
+        #app{
+            margin-top: 100px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+        }
+        .container {
+            width: 1200px;
+        }
+        #title {
+            color: rgba(20, 168, 99, 0.7);
+            text-align: center;
+            font-size: 67px;
+        }
+        .option {
+            border: 2px solid #186340;
+            background: linear-gradient(268deg, rgba(35, 99, 69, 0.33) 24.53%, rgba(7, 41, 50, 0.33) 70%);
+            box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(4.449999809265137px);
+            color: #1a6843;
+            width: 200px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .option:hover {
+            background: linear-gradient(268deg, rgba(40, 116, 80, 0.5) 24.53%, rgba(10, 58, 71, 0.5) 70%);
+            font-size: 22px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .table th {
+            background: rgba(26, 104, 67, 0.6);
+            color: #74c9a1;
+            padding: 15px;
+            text-align: left;
+            border-bottom: 2px solid #186340;
+            font-size: 18px;
+        }
+        .table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(24, 99, 64, 0.5);
+            color: #a3e6c8;
+        }
+        .table tr:hover {
+            background: rgba(40, 116, 80, 0.2);
+        }
+        .state {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .state-idle { background: rgba(76, 175, 80, 0.3); color: #4CAF50; }
+        .state-active { background: rgba(33, 150, 243, 0.3); color: #2196F3; }
+        .state-on_the_way { background: rgba(254, 152, 0, 0.3); color: #ee9714; }
+        .state-error { background: rgba(243, 67, 54, 0.3); color: #F44337; }
+        .last-update {
+            font-size: 12px;
+            color: #5a9c7a;
+            text-align: right;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1 id="title">Last Telemetry Data</h1>
+        <div class="container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mission</th>
+                        <th>Rover</th>
+                        <th>Status</th>
+                        <th>Progress</th>
+                        <th>Type</th>
+                        <th>Parameter</th>
+                        <th>Area</th>
+                        <th>Duration</th>
+                        <th>Update Interval</th>
+                        <th>Created At</th>
+                        <th>Last Update</th>
+                        <th>Last Event</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"> <!-- js -->
+                </tbody>
+            </table>
+            <div class="last-update" id="last-update">Last update: --</div>
+        </div>
+        <a href="index.html"><button class="option">< back</button></a>
+    </div>
+    
+    <script>
+        function getStateClass(state) {
+            const stateMap = {
+                'IDLE': 'state-idle',
+                'ACTIVE': 'state-active', 
+                'ON_THE_WAY': 'state-on_the_way',
+                'ERROR': 'state-error'
+            };
+            return stateMap[state] || 'state-idle';
+        }
+
+        function updateTimestamp() {
+            const now = new Date();
+            const el = document.getElementById('last-update');
+            if (el) {
+                el.textContent = `Last update: ${now.toLocaleTimeString('pt-PT')}`;
+            }
+        }
+
+        async function loadTelemetry() {
+            try {
+                const response = await fetch('http://10.0.12.20:5000/telemetry');
+                const telemetries = await response.json();
+                const tbody = document.getElementById('table-body');
+                
+                if (!telemetries || Object.keys(telemetries).length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #74c9a1;">No active rovers</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                for (const [rover, value] of Object.entries(telemetries)) {
+                    const power = parseInt(value.power_level);
+                    html += `
+                        <tr>
+                            <td>${rover}</td>
+                            <td style="white-space:nowrap;">(${value.position[0]}, ${value.position[1]})</td>
+                            <td><span class="state ${getStateClass('state')}">${value.state}</span></td>
+                            <td>${value['speed']} m/s</td>
+                            <td>${value['direction']}°</td>
+                            <td>${power}%</td>
+                            <td style="white-space:nowrap;">(${value.orientation[0]}°, ${value.orientation[1]}°)</td>
+                            <td>${value['ext_temperature']}°C</td>
+                            <td>${value['int_temperature']}°C</td>
+                        </tr>
+                    `;
+                }
+                tbody.innerHTML = html;
+                updateTimestamp();
+            } catch (error) {
+                document.getElementById('table-body').innerHTML = 
+                    '<tr><td colspan="2" style="text-align: center; color: #F44336;">Error loading telemetry data</td></tr>';
+            }
+        }
+        
+        loadTelemetry();
+        setInterval(loadTelemetry, 5000);
+    </script>
+</body>
+</html>
