@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href='https://fonts.googleapis.com/css?family=Goldman' rel='stylesheet'>
+    <style type="text/css">
+        * {
+            overflow: hidden;
+            background-image: linear-gradient(rgb(1,1,1,0.1),rgb(1,1,1,0.2)), url("assets/background.png");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            margin: 0;
+            font-family: 'Lucida Console', 'Courier New', monospace;
+        }
+        #app{
+            margin-top: 200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 50px;
+        }
+        #header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #title {
+            color: rgba(20, 168, 99, 0.7);
+            text-align: center;
+            font-size: 67px;
+        }
+        #date {
+            color: #094228;
+            text-align: center;
+            font-size: 18px;
+        }
+        #options {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-top: 50px;
+        }
+        .option {
+            color: #1a6843;
+            width: 500px;
+            height: 70px;
+            border: 2px solid #186340;
+            background: linear-gradient(268deg, rgba(35, 99, 69, 0.33) 24.53%, rgba(7, 41, 50, 0.33) 70%);
+            box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(4.449999809265137px);
+            font-size: 25px;
+        }
+        .option:hover {
+            cursor: pointer;
+            background: linear-gradient(268deg, rgba(40, 116, 80, 0.5) 24.53%, rgba(10, 58, 71, 0.5) 70%);
+            font-size: 28px;
+        }
+
+    </style>
+</head>
+<body>
+ <div id="app">
+  <template id="view-home">
+    <div id="header">
+        <h1 id="title">Ground Control</h1>
+        <p id="date">--</p>
+    </div>
+    <div id="options">
+        <button class="option" data-route="#/rovers">> active rovers</button>
+        <button class="option" data-route="#/telemetry">> latest telemetry</button>
+        <button class="option" data-route="#/missions">> missions</button>
+    </div>
+   </template>
+
+   <template id="view-rovers">
+        <div style="width:100%;max-width:900px;padding:20px;">
+            <h2>Active Rovers</h2>
+            <div id="rovers-list">Loading</div>
+            <div style="margin-top:20px;"><button class="option" data-route="#/">← back</button></div>
+        </div>
+    </template>
+
+    <template id="view-telemetry">
+        <div style="width:100%;max-width:900px;padding:20px;">
+            <h2>Last Telemetries</h2>
+            <div id="rovers-list">Loading...</div>
+            <div style="margin-top:20px;"><button class="option" data-route="#/">← back</button></div>
+        </div>
+    </template>
+
+    <template id="view-missions">
+        <div style="width:100%;max-width:900px;padding:20px;">
+            <h2>Missions</h2>
+            <div id="rovers-list">Loading...</div>
+            <div style="margin-top:20px;"><button class="option" data-route="#/">← back</button></div>
+        </div>
+    </template>
+
+ </div>
+ <script>
+    const routes = {
+        '': 'view-home',
+        '#/': 'view-home',
+        '#/rovers': 'view-rovers',
+        '#/telemetry': 'view-telemetry',
+        '#/missions': 'view-missions'
+    };
+
+    function renderRoute() {
+        const tplId = routes[location.hash] || 'view-home';
+        const tpl = document.getElementById(tplId);
+        const app = document.getElementById('app');
+        app.innerHTML = '';
+        app.appendChild(document.importNode(tpl.content, true));
+        attachViewHandlers(tplId);
+    }
+
+    function attachViewHandlers(view) {
+        document.querySelectorAll('[data-route]').forEach(btn => {
+            btn.onclick = () => { location.hash = btn.getAttribute('data-route'); };
+        });
+
+        if (view === 'view-home') {
+            if (typeof updateDateTime === 'function') updateDateTime();
+        }
+        if (view === 'view-rovers') loadRovers();
+        if (view === 'view-telemetry') loadTelemetry();
+        if (view === 'view-missions') loadMissions();
+    }
+
+    function updateDateTime() {
+        const el = document.getElementById('date');
+        if (!el) return;
+        const now = new Date();
+        const opts = {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        };
+        el.textContent = now.toLocaleString('pt-PT', opts);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateDateTime();
+        setInterval(updateDateTime, 1000); // atualiza a cada segundo
+    });
+
+    async function loadRovers() {
+
+    }
+
+    async function loadTelemetry() {
+
+    }
+
+    async function loadMissions() {
+        
+    }
+
+    window.addEventListener('hashchange', renderRoute);
+    window.addEventListener('DOMContentLoaded', renderRoute);
+    </script>
+</body>
+</html>
