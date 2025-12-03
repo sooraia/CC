@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="table.css"/>
+    <style>
+        #app {
+            margin-top: 40px;
+        }
+        .map-container {
+            display: inline-block;
+            border: 2px solid #186340;
+            background: rgba(20, 40, 40, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #map {
+            background: #0a1a1a;
+            display: block;
+        }
+        .last-update {
+            color: #5a9c7a;
+            margin-top: 10px;
+            font-size: 14px;
+            background: linear-gradient(268deg, rgba(35, 99, 69, 0.33) 24.53%, rgba(7, 41, 50, 0.33) 70%);;
+            backdrop-filter: blur(4.449999809265137px);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1 id="title">Map</h1>
+        
+        <div class="map-container">
+            <canvas id="map" width="600" height="600"></canvas>
+            <div class="last-update" id="last-update">Last update: --</div>
+        </div>
+        
+        <div>
+            <a href="index.html"><button class="option">< back</button></a>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('map');
+        const canvaspreench = canvas.getContext('2d');
+        
+        const MIN = -50;
+        const MAX = 50;
+        
+        function adjust(x, y) {
+            const px = ((x - MIN) / (MAX - MIN)) * canvas.width;
+            const py = canvas.height - ((y - MIN) / (MAX - MIN)) * canvas.height;
+            return { x: px, y: py };
+        }
+        
+        function drawMap() {
+            canvaspreench.fillStyle = '#0a1a1a';
+            canvaspreench.fillRect(0, 0, canvas.width, canvas.height);
+            
+            canvaspreench.strokeStyle = '#1a6843';
+            canvaspreench.lineWidth = 1;
+            
+            for (let x = MIN; x <= MAX; x += 10) {
+                const pos = adjust(x, MIN);
+                canvaspreench.beginPath();
+                canvaspreench.moveTo(pos.x, 0);
+                canvaspreench.lineTo(pos.x, canvas.height);
+                canvaspreench.stroke();
+                
+                canvaspreench.fillStyle = '#5a9c7a';
+                canvaspreench.font = '10px monospace';
+                canvaspreench.fillText(x + 'km', pos.x + 2, canvas.height - 2);
+            }
+            
+            for (let y = MIN; y <= MAX; y += 10) {
+                const pos = adjust(MIN, y);
+                canvaspreench.beginPath();
+                canvaspreench.moveTo(0, pos.y);
+                canvaspreench.lineTo(canvas.width, pos.y);
+                canvaspreench.stroke();
+                
+                canvaspreench.fillStyle = '#5a9c7a';
+                canvaspreench.fillText(y + 'km', 2, pos.y - 2);
+            }
+            
+            canvaspreench.strokeStyle = '#00d4ff';
+            canvaspreench.lineWidth = 0.5;
+            const center = adjust(0, 0);
+            canvaspreench.beginPath();
+            canvaspreench.moveTo(center.x, 0);
+            canvaspreench.lineTo(center.x, canvas.height);
+            canvaspreench.moveTo(0, center.y);
+            canvaspreench.lineTo(canvas.width, center.y);
+            canvaspreench.stroke();
+            
+            canvaspreench.fillStyle = '#00d4ff';
+            canvaspreench.beginPath();
+            canvaspreench.arc(center.x, center.y, 8, 0, Math.PI * 2);
+            canvaspreench.fill();
+            canvaspreench.fillStyle = 'white';
+            canvaspreench.font = '12px monospace';
+            canvaspreench.fillText('BASE', center.x + 10, center.y - 10);
+        }
+        
+        function drawRover(x, y, roverId, state) {
+            const colors = {
+                'IDLE': '#4CAF50',
+                'ACTIVE': '#2196F3',
+                'ON_THE_WAY': '#FF9800',
+                'ERROR': '#F44336'
+            };
+            
+            const pos = adjust(x, y);
+            const color = colors[state] || '#FFFFFF';
+            
+            canvaspreench.fillStyle = color;
+            canvaspreench.beginPath();
+            canvaspreench.arc(pos.x, pos.y, 6, 0, Math.PI * 2);
+            canvaspreench.fill();
+            canvaspreench.strokeStyle = 'white';
+            canvaspreench.lineWidth = 1;
+            canvaspreench.stroke();
+            
+            canvaspreench.fillStyle = 'white';
+            canvaspreench.font = '12px monospace';
+            canvaspreench.fillText(roverId, pos.x + 10, pos.y + 5);
+        }
+        
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('last-update').textContent = 
+                `Last update: ${now.toLocaleTimeString('pt-PT')}`;
+        }
+        
+        async function loadTelemetry() {
+            try {
+                const response = await fetch('http://10.0.12.20:5000/telemetry');
+                const telemetry = await response.json();
+                
+                drawMap();
+
+                if (telemetry) {
+                    for (const [rover, value] of Object.entries(telemetry)) {
+                        if (value.position) {
+                            const [x, y] = value.position;
+                            drawRover(x, y, rover, value.state);
+                        }
+                    }
+                }
+                
+                updateTimestamp();
+            } catch (error) {
+                console.error('Error loading telemetry:', error);
+            }
+        }
+        
+        drawMap();
+        loadTelemetry();
+        setInterval(loadTelemetry, 3000);
+    </script>
+</body>
+</html>

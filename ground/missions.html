@@ -3,98 +3,65 @@
 <head>
     <meta charset="utf-8" />
     <style>
-        * {
-            overflow: hidden;
-            background-image: linear-gradient(rgb(1,1,1,0.1),rgb(1,1,1,0.2)), url("assets/background.png");
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            margin: 0;
-            font-family: 'Lucida Console', 'Courier New', monospace;
-        }
-        #app{
-            margin-top: 100px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 40px;
-        }
         .container {
-            width: 1200px;
+            width: 1600px;
         }
-        #title {
-            color: rgba(20, 168, 99, 0.7);
-            text-align: center;
-            font-size: 67px;
+        #filter {
+            margin-bottom: 20px;
+            color: rgba(127, 190, 161, 0.7);
         }
-        .option {
-            border: 2px solid #186340;
+        #status-filter {
+            margin-left: 10px;
+            padding: 5px;
+            border: 1px solid #549677;
             background: linear-gradient(268deg, rgba(35, 99, 69, 0.33) 24.53%, rgba(7, 41, 50, 0.33) 70%);
-            box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(4.449999809265137px);
-            color: #1a6843;
-            width: 200px;
-            height: 50px;
-            font-size: 20px;
+            color: #549677;
+        }
+        #status-filter:hover {
+            cursor: pointer;
+            background: linear-gradient(268deg, rgba(40, 116, 80, 0.5) 24.53%, rgba(10, 58, 71, 0.5) 70%);
+        }
+        #pagination {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        #pagination a {
+            display: inline-block;
+            text-decoration: none;
+            color: #549677;
+            border: 2px solid #549677;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+        #pagination a:hover {
+            background-color: #74c9a1;
+            color: white;
             cursor: pointer;
         }
-        .option:hover {
-            background: linear-gradient(268deg, rgba(40, 116, 80, 0.5) 24.53%, rgba(10, 58, 71, 0.5) 70%);
-            font-size: 22px;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .table th {
-            background: rgba(26, 104, 67, 0.6);
-            color: #74c9a1;
-            padding: 15px;
-            text-align: left;
-            border-bottom: 2px solid #186340;
-            font-size: 18px;
-        }
-        .table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid rgba(24, 99, 64, 0.5);
-            color: #a3e6c8;
-        }
-        .table tr:hover {
-            background: rgba(40, 116, 80, 0.2);
-        }
-        .state {
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-        .state-idle { background: rgba(76, 175, 80, 0.3); color: #4CAF50; }
-        .state-active { background: rgba(33, 150, 243, 0.3); color: #2196F3; }
-        .state-on_the_way { background: rgba(254, 152, 0, 0.3); color: #ee9714; }
-        .state-error { background: rgba(243, 67, 54, 0.3); color: #F44337; }
-        .last-update {
-            font-size: 12px;
-            color: #5a9c7a;
-            text-align: right;
-            margin-top: 10px;
-        }
     </style>
+    <link rel="stylesheet" href="table.css"/>
 </head>
 <body>
     <div id="app">
-        <h1 id="title">Last Telemetry Data</h1>
+        <h1 id="title">Missions</h1>
+        <div id="filter" style="margin-bottom:20px;">
+            <label for="status-filter">Filter by Status:</label>
+            <select id="status-filter">
+                <option value="all">All</option>
+                <option value="IN PROGRESS">In Progress</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="FAILED">Failed</option>
+            </select>
         <div class="container">
             <table class="table">
                 <thead>
                     <tr>
                         <th>Mission</th>
                         <th>Rover</th>
-                        <th>Status</th>
+                        <th style="width:115px">Status</th>
                         <th>Progress</th>
-                        <th>Type</th>
+                        <th>Task</th>
                         <th>Parameter</th>
                         <th>Area</th>
                         <th>Duration</th>
@@ -107,18 +74,82 @@
                 <tbody id="table-body"> <!-- js -->
                 </tbody>
             </table>
+            <div id="pagination"></div>
             <div class="last-update" id="last-update">Last update: --</div>
         </div>
         <a href="index.html"><button class="option">< back</button></a>
     </div>
     
     <script>
+        const rowsPerPage = 7;
+        let currentPage = 1;
+        let missionsData = [];
+
+        function renderRow(mission, value) {
+            return `
+                <tr>
+                    <td>${mission}</td>
+                    <td>${value.rover_id ?? ''}</td>
+                    <td><span class="state ${getStateClass(value.status)}">${value.status ?? ''}</span></td>
+                    <td>${value.progress ?? 0}%</td>
+                    <td>${value.mission_type ?? ''}</td>
+                    <td>${value.task_param ?? ''}</td>
+                    <td>(${(value.area && value.area[0]) || ''}), (${(value.area && value.area[1]) || ''})</td>
+                    <td>${value.duration ?? ''}s</td>
+                    <td>${value.update_interval ?? ''}s</td>
+                    <td>${value.created_at ?? ''}</td>
+                    <td>${value.last_update ?? ''}</td>
+                    <td>${value.last_event ?? ''}</td>
+                </tr>
+            `;
+        }
+
+        function displayTable(page = 1) {
+            currentPage = page;
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const slice = missionsData.slice(startIndex, endIndex);
+
+            const tbody = document.getElementById("table-body");
+            if (!tbody) return;
+
+            if (slice.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#74c9a1">No missions</td></tr>';
+            } else {
+                tbody.innerHTML = slice.map(([m, v]) => renderRow(m, v)).join('');
+            }
+
+            updateTimestamp();
+            updatePagination(currentPage);
+        }
+
+        function updatePagination(currentPage) {
+            const pageCount = Math.max(1, Math.ceil(missionsData.length / rowsPerPage));
+            const paginationContainer = document.getElementById("pagination");
+            if (!paginationContainer) return;
+            paginationContainer.innerHTML = "";
+
+            for (let i = 1; i <= pageCount; i++) {
+                const pageLink = document.createElement("a");
+                pageLink.href = "#";
+                pageLink.innerText = i;
+                pageLink.onclick = (e) => {
+                    e.preventDefault();
+                    displayTable(i);
+                };
+                if (i === currentPage) {
+                    pageLink.style.fontWeight = "bold";
+                }
+                paginationContainer.appendChild(pageLink);
+                paginationContainer.appendChild(document.createTextNode(" "));
+            }
+        }
+        
         function getStateClass(state) {
             const stateMap = {
-                'IDLE': 'state-idle',
-                'ACTIVE': 'state-active', 
-                'ON_THE_WAY': 'state-on_the_way',
-                'ERROR': 'state-error'
+                'IN PROGRESS': 'state-active',
+                'COMPLETED': 'state-idle',
+                'FAILED': 'state-error'
             };
             return stateMap[state] || 'state-idle';
         }
@@ -131,44 +162,35 @@
             }
         }
 
-        async function loadTelemetry() {
+        async function loadMissions(bool =false) {
             try {
-                const response = await fetch('http://10.0.12.20:5000/telemetry');
-                const telemetries = await response.json();
-                const tbody = document.getElementById('table-body');
-                
-                if (!telemetries || Object.keys(telemetries).length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #74c9a1;">No active rovers</td></tr>';
-                    return;
-                }
-                
-                let html = '';
-                for (const [rover, value] of Object.entries(telemetries)) {
-                    const power = parseInt(value.power_level);
-                    html += `
-                        <tr>
-                            <td>${rover}</td>
-                            <td style="white-space:nowrap;">(${value.position[0]}, ${value.position[1]})</td>
-                            <td><span class="state ${getStateClass('state')}">${value.state}</span></td>
-                            <td>${value['speed']} m/s</td>
-                            <td>${value['direction']}°</td>
-                            <td>${power}%</td>
-                            <td style="white-space:nowrap;">(${value.orientation[0]}°, ${value.orientation[1]}°)</td>
-                            <td>${value['ext_temperature']}°C</td>
-                            <td>${value['int_temperature']}°C</td>
-                        </tr>
-                    `;
-                }
-                tbody.innerHTML = html;
-                updateTimestamp();
+                const response = await fetch('http://10.0.12.20:5000/missions');
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const missions = await response.json();
+
+                const entries = Object.entries(missions || {});
+                const filter = (document.getElementById('status-filter')?.value || 'all').toLowerCase();
+                missionsData = entries.filter(([id, v]) => {
+                    if (filter === 'all') return true;
+                    return ((v.status || '').toLowerCase() === filter);
+                });
+
+                if (bool) currentPage = 1; // reset to first page on filter change
+                displayTable(currentPage);
             } catch (error) {
-                document.getElementById('table-body').innerHTML = 
-                    '<tr><td colspan="2" style="text-align: center; color: #F44336;">Error loading telemetry data</td></tr>';
+                const tbody = document.getElementById('table-body');
+                if (tbody) tbody.innerHTML =
+                    '<tr><td colspan="12" style="text-align: center; color: #F44336;">Error loading missions</td></tr>';
+                console.error('loadMissions error', error);
             }
         }
         
-        loadTelemetry();
-        setInterval(loadTelemetry, 5000);
+        document.addEventListener('DOMContentLoaded', () => {
+            const statusSelect = document.getElementById('status-filter');
+            if (statusSelect) statusSelect.addEventListener('change', () => loadMissions(true));
+            loadMissions();
+            setInterval(loadMissions, 5000);
+        });
     </script>
 </body>
 </html>

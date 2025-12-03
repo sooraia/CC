@@ -1,6 +1,6 @@
 import time
 import threading
-from common.mission_types import get_mission_name, get_param_name, get_event_name
+from common.mission_types import get_mission_name, get_param_name, get_event_name, get_mission_by_name
 from common.ml_protocol import MLMission
 
 class Database:
@@ -81,18 +81,21 @@ class Database:
         mission_id = ml_mission.mission_id
         mission_type_name = get_mission_name(ml_mission.task)
         param_name = get_param_name(ml_mission.task, ml_mission.task_param)
+
+        created_at = time.strftime("%H:%M:%S", time.localtime(ml_mission.timestamp))
         mission_dict = {
             "mission_id": mission_id,
             "rover_id": rover_id,
-            "status": "ACTIVE",         
+            "status": "NOT STARTED",         
             "progress": 0,             
             "mission_type": mission_type_name,
-            "task_param": param_name,         
+            "task_param": param_name,
             "area": ml_mission.area,         
             "duration": ml_mission.duration,
             "update_interval": ml_mission.update_interval,
-            "created_at": ml_mission.timestamp,
-            "last_update": ml_mission.timestamp,
+            "created_at": created_at,
+            "last_update": created_at,
+            "last_event": "None"
         }
         try:
             self.lock.acquire()
@@ -105,9 +108,10 @@ class Database:
         print("DATABASE.update_mission chamado")
         #report é o nome dado ao packet   
         STATUS_MAP = {
-            '1': "IN_PROGRESS",
-            '2': "COMPLETED",
-            '3': "FAILED"
+            '1': "IN PROGRESS",
+            '2': "IN PROGRESS",
+            '3': "COMPLETED",
+            '4': "FAILED"
         }
         try:
             self.lock.acquire()
@@ -118,11 +122,10 @@ class Database:
             
             mission["progress"] = report.progress
             mission["status"] = STATUS_MAP.get(report.status, "UNKNOWN")
-            mission["last_update"] = report.timestamp
-            mission["last_event"] = get_event_name (
-                mission["task_code"],  
-            report.status 
-            )
+            update_time = time.strftime("%H:%M:%S", time.localtime(report.timestamp))
+            mission["last_update"] = update_time
+            task_code = get_mission_by_name(mission["mission_type"])[0]
+            mission["last_event"] = get_event_name(task_code, report.status)
         finally:
             self.lock.release()
             

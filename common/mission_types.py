@@ -4,7 +4,7 @@
 
 MISSION_TYPES = {
     'S': {  # Coleção de amostras
-        'name': 'SAMPLE_COLLECTION',
+        'name': 'Sample Collection',
         'param': {'S': 'Soil', 'R': 'Rock', 'A': 'Atmosphere', 'W': 'Water'},
         'events': {
             '1': 'Collecting Sample', # 25%
@@ -14,7 +14,7 @@ MISSION_TYPES = {
         }
     },
     'I': {  # Captura de imagens
-        'name': 'IMAGE_CAPTURE',
+        'name': 'Image Capture',
         'param': {'P': 'Panoramic', 'C': 'Infrared', 'M': 'Macro'},
         'events': {
             '1': 'Capturing Imgage', # 25%
@@ -24,7 +24,7 @@ MISSION_TYPES = {
         }
     },
     'E': {  # Análise ambiental
-        'name': 'ENVIRONMENTAL_ANALYSIS',
+        'name': 'Environmental Analysis',
         'param': {'T': 'Temperature', 'R': 'Radiation', 'P': 'Pressure', 'H': 'Humidity'},
         'events': {
             '1': 'Initial Readings',
@@ -34,7 +34,7 @@ MISSION_TYPES = {
         }
     },
     'D': {  # Instalação de equipamentos
-        'name': 'EQUIPMENT_DEPLOYMENT', 
+        'name': 'Equipment Deployment',
         'param': {'S': 'Seismometer', 'W': 'Weather Station', 'M': 'Marker', 'C': 'Communication Relay'},
         'events': {
             '1': 'Positioning Equipment',
@@ -44,7 +44,7 @@ MISSION_TYPES = {
         }
     },
     'M': {  # Mapeamento do terreno
-        'name': 'MAPPING',
+        'name': 'Mapping',
         'param': {'H': 'HIGH', 'M': 'MEDIUM', 'L': 'LOW'},
         'events': {
             '1': 'Scanning area',
@@ -54,7 +54,7 @@ MISSION_TYPES = {
         }
     },
     'A': {  # Auto-diagnóstico
-        'name': 'AUTO_DIAGNOSTIC',
+        'name': 'Auto-Diagnostic',
         'events': {
             '1': 'Starting Diagnostic',
             '2': 'Checking Systems',
@@ -68,7 +68,7 @@ def get_mission_name(mission_code: str) -> str:
     return MISSION_TYPES.get(mission_code, {}).get('name', 'UNKNOWN')
 
 def get_param_name(mission_code: str, param_code: str) -> str:
-    return MISSION_TYPES.get(mission_code, {}).get('param', {}).get(param_code, 'UNKNOWN')
+    return MISSION_TYPES.get(mission_code, {}).get('param', {}).get(param_code, 'None')
 
 def get_event_name(mission_code: str, event_code: str) -> str:
     return MISSION_TYPES.get(mission_code, {}).get('events', {}).get(event_code, 'UNKNOWN')
