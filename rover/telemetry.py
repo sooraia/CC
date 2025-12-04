@@ -6,7 +6,7 @@ from typing import List, Tuple
 from common.mission_types import MISSION_TYPES, get_mission_by_name, get_event_name, get_mission_name, get_param_name
 from common.__init__ import MAX_X, MAX_Y, MIN_X, MIN_Y
 
-speed_limit = 10000 #200 m/h
+speed_limit = 80 #60 km/h
 
 class RoverTelemetry:
     
@@ -56,7 +56,7 @@ class RoverTelemetry:
             'rover_id' : self.rover_id,
             'position': [round(self.position[0], 2), round(self.position[1], 2)],
             'state': self.operational_state,
-            'power_level': round(self.power_level,2),
+            'power_level': int(self.power_level),
             'orientation': [round(self.solar_orientation[0], 2), round(self.solar_orientation[1], 2)],
             'ext_temperature': round(self.ext_temperature,2),
             'int_temperature': round(self.int_temperature,2),
@@ -92,6 +92,8 @@ class RoverTelemetry:
             internal = self.ext_temperature + 8.0
         elif self.operational_state == 'IDLE':
             internal = self.ext_temperature + 5.0
+        else:
+            internal = self.ext_temperature + 3.0
 
         self.int_temperature = internal
 
@@ -122,15 +124,16 @@ class RoverTelemetry:
         return max(0.0, efficiency)
 
     def _update_power_level(self, delta_time, current_time):
-        current_power = int(self.power_level)
+        current_power = self.power_level
         base_consumption = 0.5  # %/min
-        
+
         if self.operational_state == 'ACTIVE': #consumo maior quando active
             state_consumption = 2.0
-        elif self.speed > 0:
-            state_consumption = 1.5 + (self.speed / speed_limit) * 1.0
         else:
             state_consumption = 0.5
+
+        if self.speed > 0:
+            state_consumption += 1.5 + (self.speed / speed_limit) * 1.0
         
         solar_efficiency= self._panel_efficiency(current_time)
         solar_generation= solar_efficiency *3.0  #% /min
@@ -138,7 +141,7 @@ class RoverTelemetry:
         dif = (base_consumption + state_consumption -solar_generation) *(delta_time/60)
         power = max(0, min(100, current_power -dif))
         
-        self.power_level = int(power)
+        self.power_level = power
         
     def _optimize_solar_orientation(self, current_time):
         sun_direction, sun_elevation = self._calculate_sun_position(current_time)
@@ -170,13 +173,6 @@ class RoverTelemetry:
             
             self.position[0] = start_x + (dx * progress)
             self.position[1] = start_y + (dy * progress)
-            
-            # Painéis solares
-            self.solar_orientation = [direction, 45.0]
-            
-            # consumo de energia proporcional à distância percorrida
-            power_used = int(progress * 15)  # 15% da bateria para viagem total
-            self.power_level = max(0, 100 - power_used)
             
             time.sleep(1)
     

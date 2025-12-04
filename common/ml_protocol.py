@@ -1,18 +1,68 @@
-"""Serialização binária para Mission Link (UDP)"""
-
 from abc import ABC
 from typing import ClassVar
 import time
 import struct
 import threading
 
+MISSION_CODES = {
+    'S': 0b000,
+    'I': 0b001,
+    'E': 0b010,
+    'D': 0b011,
+    'M': 0b100,
+    'A': 0b101,
+}
+
+PARAM_CODES = {
+    'S': {'S': 0b00, 'R': 0b01, 'A': 0b10, 'W': 0b11},
+    'I': {'P': 0b00, 'C': 0b01, 'M': 0b10},
+    'E': {'T': 0b00, 'R': 0b01, 'P': 0b10, 'H': 0b11},
+    'D': {'S': 0b00, 'W': 0b01, 'M': 0b10, 'C': 0b11},
+    'M': {'H': 0b00, 'M': 0b01, 'L': 0b10},
+    'A': {} 
+}
+
+def pack_mission_byte(mission_code, param_code=None):
+    mission_bits = MISSION_CODES.get(mission_code, 0) # 3 bits
+    
+    has_param = param_code is not None # 1 bit
+    param_flag = 0b1 if has_param else 0b0 # 1 bit
+    
+    if has_param and mission_code in PARAM_CODES:
+        param_bits = PARAM_CODES[mission_code].get(param_code, 0)
+    else:
+        param_bits = 0
+    
+    fill_bits = 0b00
+    
+    packed = (mission_bits << 5) | (param_flag << 4) | (param_bits << 2) | fill_bits
+    
+    return bytes([packed])
+
+def unpack_mission_byte(byte_val):
+    mission_idx = (byte_val >> 5) & 0b111 # 7-5
+    has_param = (byte_val >> 4) & 0b1 # 4
+    param_bits = (byte_val >> 2) & 0b11 # 3-2
+    fill = byte_val & 0b11
+    
+    mission_code = {v: k for k, v in MISSION_CODES.items()}[mission_idx]
+    
+    param_code = None
+    if has_param and mission_code in PARAM_CODES:
+        param_dict = PARAM_CODES[mission_code]
+        for code, bits in param_dict.items():
+            if bits == param_bits:
+                param_code = code
+                break
+    
+    return mission_code, param_code
+
+
 
 class SerializationException(Exception):
     pass
 
-
 class MLMessage(ABC):
-    _sequence_counter: ClassVar[int] = 0
      
     def __init__(self, timestamp: int, sequence_num: int = 0):
         self.sequence_num = sequence_num    # número de sequência
@@ -100,14 +150,6 @@ class MLAck(MLMessage):  # mensagem ML do tipo Ack
         mission_id = payload[0:5].decode('utf-8')
         return cls(mission_id, timestamp, sequence_num)
 
-
-def validate_polar_coords(coord):
-    """Valida coordenadas polares [distance, bearing]"""
-    if not isinstance(coord, list) or len(coord) != 2:
-        return True  # inválido
-    return False
-
-
 class MLMission(MLMessage):  # mensagem ML do tipo Missão
 
     def __init__(
@@ -131,9 +173,6 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
         ):
             raise ValueError("Invalid Area")
         
-        if(task_param is None):
-            task_param = '0'
-
         self.area = area  # [[r1,a1],[r2,a2]]
         self.task = task              # 1 byte
         self.task_param = task_param  # 1 byte
@@ -148,8 +187,7 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
         res += struct.pack('>f', round(self.area[1][0], 2))
         res += struct.pack('>f', round(self.area[1][1], 2))
 
-        res += self.task.encode('utf-8')        # 1 byte
-        res += self.task_param.encode('utf-8')  # 1 byte
+        res += pack_mission_byte(self.task, self.task_param)
         res += self.duration.to_bytes(4, 'big')
         res += self.update_interval.to_bytes(4, 'big')
 
@@ -157,7 +195,7 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
     
     @classmethod
     def _deserialize_payload(cls, payload: bytes, timestamp: int, sequence_num: int):
-        if len(payload) < 31:
+        if len(payload) < 30:
             raise SerializationException("MLMission payload too short")
 
         mission_id = payload[0:5].decode('utf-8')
@@ -167,10 +205,9 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
             [round(struct.unpack('>f', payload[13:17])[0], 2),
             round(struct.unpack('>f', payload[17:21])[0], 2)]]
         
-        task = payload[21:22].decode('utf-8')
-        task_param = payload[22:23].decode('utf-8')
-        duration = int.from_bytes(payload[23:27], 'big')
-        update_interval = int.from_bytes(payload[27:31], 'big')
+        task, task_param = unpack_mission_byte(payload[21])
+        duration = int.from_bytes(payload[22:26], 'big')
+        update_interval = int.from_bytes(payload[26:30], 'big')
 
         return cls(
             area,

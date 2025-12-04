@@ -1,12 +1,10 @@
-"""Serialização binária para TelemetryStream (TCP)"""
-
 import struct
 
 TS_LENGTH = 40 #(bytes)
 
 ROVER_STATE = { #Códigos para serializar os estados do rover
     'M' : 'ACTIVE',
-    'c' : 'ON_THE_WAY', # a caminho ??
+    'c' : 'ON_THE_WAY',
     'I' : 'IDLE',
     'E' : 'ERROR'
 }

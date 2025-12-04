@@ -1,7 +1,5 @@
 """Dicionários para tipos de missão e os seus parãmetros adicionais/eventos de progresso"""
 
-#em vez de usares
-
 MISSION_TYPES = {
     'S': {  # Coleção de amostras
         'name': 'Sample Collection',
@@ -86,4 +84,4 @@ def get_param_code(mission_code: str, param_name: str) -> str:
     for code, name in params.items():
         if name == param_name:
             return code
-    return '0'  # Código default se não encontrar
+    return None
