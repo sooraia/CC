@@ -4,33 +4,37 @@ import time
 from common.mission_link import MissionLink, ML_TIMEOUT, ML_MAX_RETRANSMISSIONS
 from common.ml_protocol import MLReport, MLRequest, MLMission, MLAck
 from rover.telemetry import RoverTelemetry
+import datetime
 
-BACKOFF = 30
+BACKOFF = 10
 
 class MLClientHandler(MissionLink):
 
-    def __init__(self, state: RoverTelemetry):
+    def __init__(self, state: RoverTelemetry, output):
         self.telemetry = state
-        super().__init__()
+        super().__init__(output)
         self.socket.settimeout(ML_TIMEOUT)
         self.pending_request = False
         self.pending_request_lock = threading.Lock()
+
+        #metrics for tests
+        self.backoffs = 0
 
     def send_request_loop(self, server_addr : tuple):
         self.server_addr = server_addr
         while True:
             retries = 0
-
+            
             if(self.telemetry.operational_state == 'IDLE' or self.telemetry.operational_state == 'ERROR'):
                 request = MLRequest(rover_id= self.telemetry.rover_id, timestamp= time.time(), sequence_num=1) #numero de seq começa em 1 para cada "conexão"
                 with self.pending_request_lock:
                     self.pending_request = True
                 self.send_packet(request, server_addr) 
-                print(f"Sent MLRequest (seq: {request.sequence_num}) to {server_addr[0]}:{server_addr[1]}")
+                self.print_log(f"Sent MLRequest, seq={request.sequence_num} to {server_addr[0]}:{server_addr[1]}")
 
                 while True:
                     with self.pending_request_lock:
-                        if not self.pending_request:  # Missão foi recebida
+                        if not self.pending_request:  # Missão recebida
                             break
                         if retries >= ML_MAX_RETRANSMISSIONS:
                             break
@@ -42,13 +46,15 @@ class MLClientHandler(MissionLink):
                             if retries < ML_MAX_RETRANSMISSIONS:
                                 request.timestamp = time.time()
                                 self.send_packet(request, server_addr)
-                                print(f"Retrying request... ({retries}/{ML_MAX_RETRANSMISSIONS})")
+                                self.print_log(f"Retransmitting MLRequest ({retries}/{ML_MAX_RETRANSMISSIONS})")
 
                 interval = 1
                 with self.pending_request_lock:
                     if self.pending_request:  # Se ainda está pendente após max retries
                         interval = BACKOFF
-                        self.pending_request = False  # Reset para próxima tentativa
+                        self.print_log("Maximum MLRequest retransmissions reached. Initiating backoff.")
+                        self.backoffs+=1
+                        self.pending_request = False
                 time.sleep(interval)
             
             else:
@@ -59,10 +65,10 @@ class MLClientHandler(MissionLink):
                     time.sleep(2)
 
 
-    def _handle_packet(self, packet, addr): #!!!!!verificar se vem do mesmo endereço que se estava à espera!!
+    def _handle_packet(self, packet, addr):
         if isinstance(packet, MLMission):
-            print("Received MLMission:")
-            packet.print_mission()#!!!!!!!!!!!!!!!!!debug
+            self.print_log(f"Received MLMission, seq={packet.sequence_num}:")
+            packet.print_mission(self.output)
 
             if addr!=self.server_addr or self.telemetry.operational_state =='ACTIVE'or self.telemetry.operational_state =='ON_THE_WAY':
                 return False
@@ -73,9 +79,8 @@ class MLClientHandler(MissionLink):
 
 
             ack = MLAck(packet.mission_id, time.time(), packet.sequence_num)
-            print('Sending MLAck for Mission ID:', packet.mission_id)
             self.send_packet(ack, addr)
-            print('Sent MLAck for Mission ID:', packet.mission_id)
+            self.print_log(f"Sent MLAck for Mission: {packet.mission_id}, ack={ack.sequence_num}")
 
             mission_thread = threading.Thread(target=self._start_mission, args=(packet,))
             mission_thread.start()
@@ -102,16 +107,16 @@ class MLClientHandler(MissionLink):
                           self.telemetry.current_mission_status, 
                           self.telemetry.current_mission_progress, time.time(), seq)
         self.send_packet(report, addr)
+        self.print_log(f"Sent MLReport for Mission:{self.telemetry.current_mission_id}, seq={seq}")
         self._add_to_pending_acks(report, addr)
     
     def _report_sender(self, seq : int, interval : int):
-        while self.telemetry.current_mission_progress <100: #só quando chegar ao local da missão ou a caminho também?
+        while self.telemetry.current_mission_progress <100:
             seq += 1
-            print("Sending MLReport, Seq:", seq)
             self._send_report(seq, self.server_addr)
             time.sleep(interval)
 
-        if self.telemetry.current_mission_progress==100: #envia um último report no final
+        if self.telemetry.current_mission_progress==100: #último report no final
             seq += 1
             self._send_report(seq, self.server_addr)
 

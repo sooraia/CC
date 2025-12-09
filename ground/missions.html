@@ -90,7 +90,7 @@
                 <tr>
                     <td>${mission}</td>
                     <td>${value.rover_id ?? ''}</td>
-                    <td><span class="state ${getStateClass(value.status)}">${value.status ?? ''}</span></td>
+                    <td style="width:142px"><span class="state ${getStateClass(value.status)}">${value.status ?? ''}</span></td>
                     <td>${value.progress ?? 0}%</td>
                     <td>${value.mission_type ?? ''}</td>
                     <td>${value.task_param ?? ''}</td>
@@ -149,7 +149,9 @@
             const stateMap = {
                 'IN PROGRESS': 'state-active',
                 'COMPLETED': 'state-idle',
-                'FAILED': 'state-error'
+                'FAILED': 'state-error',
+                'NOT STARTED': 'state-on_the_way',
+                'LOST CONNECTION': 'state-error'
             };
             return stateMap[state] || 'state-idle';
         }

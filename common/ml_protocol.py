@@ -220,13 +220,13 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
             sequence_num
         )
     
-    def print_mission(self):
-        print(f"Mission ID: {self.mission_id}")
-        print(f"Area: {self.area}")
-        print(f"Task: {self.task}")
-        print(f"Task Param: {self.task_param}")
-        print(f"Duration: {self.duration} seconds")
-        print(f"Update Interval: {self.update_interval} seconds")
+    def print_mission(self, output = None):
+        print(f"Mission ID: {self.mission_id}", file=output)
+        print(f"Area: {self.area}", file=output)
+        print(f"Task: {self.task}" , file=output)
+        print(f"Task Param: {self.task_param}" , file=output)
+        print(f"Duration: {self.duration} seconds", file=output)
+        print(f"Update Interval: {self.update_interval} seconds" , file=output)
 
 
 class MLReport(MLMessage):  # mensagem ML do tipo Report (atualização)
@@ -237,7 +237,6 @@ class MLReport(MLMessage):  # mensagem ML do tipo Report (atualização)
         self.progress = progress       # 0-100
 
     def serialize_payload(self) -> bytes:
-        self.print_report()
         res = self.mission_id.encode('utf-8')      # 5 bytes
         res += self.status.encode('utf-8')         # 1 byte
         res += self.progress.to_bytes(1, 'big')    # 1 byte

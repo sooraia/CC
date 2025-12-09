@@ -6,7 +6,7 @@ from typing import List, Tuple
 from common.mission_types import MISSION_TYPES, get_mission_by_name, get_event_name, get_mission_name, get_param_name
 from common.__init__ import MAX_X, MAX_Y, MIN_X, MIN_Y
 
-speed_limit = 80 #60 km/h
+speed_limit = 800000 #60 km/h
 
 class RoverTelemetry:
     
@@ -28,7 +28,7 @@ class RoverTelemetry:
         #Missão atual
         self.reset_mission_paramaters()
 
-        self.lock = threading.Lock() #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.lock = threading.Lock() 
 
     def add_mission(self, mission_id: str, area: list, task: str, task_param: str, duration: int, update_interval: int):
         self.current_mission_id = mission_id
@@ -218,15 +218,15 @@ class RoverTelemetry:
                         self.current_mission_status = event
                         self.current_mission_progress = 100
                         self.operational_state = 'IDLE'
-                        print(f"debug: erro: {self.current_mission_status}")
+                        #print(f"debug: erro: {self.current_mission_status}")
                         return
                 elif self.current_mission_progress >= event_progress:
                     self.current_mission_status = event
                     completed.add(event)
-                    print(f"debug: {self.current_mission_progress}%: {self.current_mission_status}")
+                    #print(f"debug: {self.current_mission_progress}%: {self.current_mission_status}")
             
             time.sleep(1)
             
         self.current_mission_progress = 100
         self.current_mission_status = '3'  # missão concluída
-        print(f"mission completed")
+        print(f"Mission {self.current_mission_id} Execution Completed")

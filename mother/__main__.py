@@ -13,8 +13,13 @@ def main(argv: list[str]) -> None:
     database : Database = Database()
     mission_generator = MissionGenerator()
 
+    output = sys.stdout
+    if len(argv) > 1 and argv[1] == '-l':
+        logfile = ('temp/' + argv[2]) if len(argv) > 2 else 'temp/mothership_log.txt'
+        output = open(logfile, 'w', buffering=1)
+
     telemetrysystem = TelemetrySystemServer(database, '0.0.0.0', TS_DEFAULT_PORT)
-    missionlink = MLServerHandler('0.0.0.0', ML_DEFAULT_PORT, database, mission_generator)
+    missionlink = MLServerHandler('0.0.0.0', ML_DEFAULT_PORT, database, mission_generator, output)
 
     threads.append(Thread(target=telemetrysystem.start_server))
     threads.append(Thread(target=missionlink.run_server))

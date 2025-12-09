@@ -12,25 +12,26 @@ telemetry_interval = 5
 def main(argv: list[str]) -> None:
     threads : list = list()
 
-    # if (argv>3 and argv[2]=='-t'): #flag -t --> testar sem topologia
-    #     rover_id = 'R-001'
-    #     #server_address=...
+    output = sys.stdout
+    hostname = gethostname()
+    rover_id = f"R-{hostname.split('-')[-1]}" if '-' in hostname else f"R-{hostname}"
 
-    # else: #testar com topologia
-    with open('topologia/nodes.json', 'r') as file:
+    if len(argv) > 1 and argv[1] == '-l':
+        logfile = ('temp/' + argv[2]) if len(argv) > 2 else f'temp/{rover_id}_log.txt'
+        output = open(logfile, 'w', buffering=1)
+    
+    with open('config/nodes.json', 'r') as file:
         nodes_config = json.load(file)
     current_hostname = gethostname()
     rover_config = nodes_config.get(current_hostname)
     server_address = nodes_config['nave-mae']['interfaces'][rover_config['mother_interface']]
-    print('server address: '+ server_address)
 
     rover_state = RoverTelemetry(rover_id=f"R-{current_hostname.split('-')[1]}")
 
     telemetrysystem = TelemetrySystemClient(rover_state, telemetry_interval, '', 0)
-    missionlink = MLClientHandler(rover_state)
+    missionlink = MLClientHandler(rover_state, output)
 
     telemetrysystem.connect(server_address, TS_DEFAULT_PORT)
-    print(f"Connected to server at {server_address}:{TS_DEFAULT_PORT}...")
 
     threads.append(Thread(target=rover_state.update_telemetry_loop))
     threads.append(Thread(target=telemetrysystem.send_telemetry_stream))

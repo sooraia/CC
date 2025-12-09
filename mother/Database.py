@@ -53,7 +53,6 @@ class Database:
             self.lock.release()
 
     def register_telemetry(self, msg):
-        print("DATABASE.register_telemetry chamado")
         telemetry_dict = {
             "rover_id": msg.rover_id,
             "position": msg.position,
@@ -77,7 +76,6 @@ class Database:
 
 
     def add_mission(self, ml_mission, rover_id: str):
-        print("DATABASE.add_mission chamado")
         mission_id = ml_mission.mission_id
         mission_type_name = get_mission_name(ml_mission.task)
         param_name = get_param_name(ml_mission.task, ml_mission.task_param)
@@ -103,9 +101,7 @@ class Database:
         finally:
             self.lock.release()
 
-
     def update_mission(self, report):
-        print("DATABASE.update_mission chamado")
         #report é o nome dado ao packet   
         STATUS_MAP = {
             '1': "IN PROGRESS",
@@ -129,6 +125,30 @@ class Database:
         finally:
             self.lock.release()
             
+    def update_mission_lost_connection(self, mission_id: str):
+        try:
+            self.lock.acquire()
+            missions = self.dados.get("missions", {})
+            mission = missions.get(mission_id)
+            if mission is None:
+                return 
+            
+            mission["status"] = "LOST CONNECTION"
+            update_time = time.strftime("%H:%M:%S", time.localtime(time.time()))
+            mission["last_update"] = update_time
+        finally:
+            self.lock.release()
+
+    def has_pending_mission(self, rover_id: str):
+        try:
+            self.lock.acquire()
+            missions = self.dados.get("missions", {})
+            for mission in missions.values():
+                if mission["rover_id"] == rover_id and mission["status"] in ["NOT STARTED", "IN PROGRESS"]:
+                    return mission["mission_id"]
+            return None
+        finally:
+            self.lock.release()
     
     def get_missions(self):
         try:
@@ -149,7 +169,6 @@ class Database:
     def get_rover_telemetry(self, rover_id: str):
         try:
             self.lock.acquire()
-            return self.dados["last_telemetries"][rover_id]
+            return self.dados.get("last_telemetries", {}).get(rover_id, None)
         finally:
             self.lock.release()
-

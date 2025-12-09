@@ -1,0 +1,8 @@
+{
+    "min distance (km)": 0,
+    "max distance (km)": 5,
+    "min duration (s)": 60,
+    "max duration (s)": 190,
+    "min update interval (s)": 20,
+    "max update interval (s)": 30
+}
