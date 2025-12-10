@@ -1,6 +1,6 @@
 import struct
 
-TS_LENGTH = 40 #(bytes)
+TS_LENGTH = 38 #(bytes)
 
 ROVER_STATE = { #Códigos para serializar os estados do rover
     'M' : 'ACTIVE',
@@ -35,7 +35,8 @@ class TSMessage:
         self.direction = direction
  
     def serialize_telemetry(self):
-        res = self.rover_id.encode('utf-8')
+        rover_id_number = self.rover_id[2:4]
+        res =rover_id_number.encode("utf-8")
         
         res += struct.pack('>f', round(self.position[0], 2))
         res += struct.pack('>f', round(self.position[1], 2))
@@ -60,25 +61,26 @@ class TSMessage:
         if len(data) != TS_LENGTH:
             raise SerializationException(f'Invalid data length: {len(data)} bytes, expected 36')
         
-        rover_id = data[0:4].decode('utf-8')
+        rover_id_number = data[0:2].decode('utf-8')
+        rover_id = 'R-' + rover_id_number
 
-        pos_dist = round(struct.unpack('>f', data[4:8])[0], 2)
-        pos_bearing = round(struct.unpack('>f', data[8:12])[0], 2) 
+        pos_dist = round(struct.unpack('>f', data[2:6])[0], 2)
+        pos_bearing = round(struct.unpack('>f', data[6:10])[0], 2) 
         position = [pos_dist, pos_bearing]
 
-        power_level = data[12:15].decode('utf-8')
+        power_level = data[10:13].decode('utf-8')
 
-        orient_x = round(struct.unpack('>f', data[15:19])[0], 2)
-        orient_y = round(struct.unpack('>f', data[19:23])[0], 2)
+        orient_x = round(struct.unpack('>f', data[13:17])[0], 2)
+        orient_y = round(struct.unpack('>f', data[17:21])[0], 2)
         orientation = [orient_x, orient_y]
         
-        ext_temperature = round(struct.unpack('>f', data[23:27])[0], 2) 
-        int_temperature = round(struct.unpack('>f', data[27:31])[0], 2) 
+        ext_temperature = round(struct.unpack('>f', data[21:25])[0], 2) 
+        int_temperature = round(struct.unpack('>f', data[25:29])[0], 2) 
         
-        speed = round(struct.unpack('>f', data[31:35])[0], 2)
-        direction = round(struct.unpack('>f', data[35:39])[0], 2)
+        speed = round(struct.unpack('>f', data[29:33])[0], 2)
+        direction = round(struct.unpack('>f', data[33:37])[0], 2)
         
-        state_code = data[39:40].decode('utf-8')
+        state_code = data[37:38].decode('utf-8')
         state = get_state_name(state_code)
         if state == 'UNKNOWN':
             raise SerializationException('Invalid state')

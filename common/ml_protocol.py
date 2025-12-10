@@ -124,13 +124,15 @@ class MLRequest(MLMessage):  # mensagem ML do tipo Pedido
         self.rover_id = rover_id
 
     def serialize_payload(self) -> bytes:
-        return self.rover_id.encode("utf-8")
+        rover_id_number = self.rover_id[2:]
+        return rover_id_number.encode("utf-8")
     
     @classmethod
     def _deserialize_payload(cls, payload: bytes, timestamp: int, sequence_num: int):
         if len(payload) < 1:
             raise SerializationException("MLRequest payload too short")
-        rover_id = payload.decode('utf-8').rstrip('\0')
+        rover_id_number = payload.decode('utf-8')
+        rover_id = 'R-' + rover_id_number
         return cls(rover_id, timestamp, sequence_num)
 
 
@@ -141,13 +143,15 @@ class MLAck(MLMessage):  # mensagem ML do tipo Ack
 
     def serialize_payload(self) -> bytes:
         # 5 bytes "M-xxx"
-        return self.mission_id.encode('utf-8')
+        mission_id_number = self.mission_id[2:5]
+        return mission_id_number.encode("utf-8")
 
     @classmethod
     def _deserialize_payload(cls, payload: bytes, timestamp: int, sequence_num: int):
-        if len(payload) < 5:
+        if len(payload) < 3:
             raise SerializationException("MLAck payload too short")
-        mission_id = payload[0:5].decode('utf-8')
+        mission_id_number = payload[0:3].decode('utf-8')
+        mission_id = 'M-' + mission_id_number
         return cls(mission_id, timestamp, sequence_num)
 
 class MLMission(MLMessage):  # mensagem ML do tipo Missão
@@ -180,7 +184,8 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
         self.update_interval = update_interval
 
     def serialize_payload(self) -> bytes:
-        res = self.mission_id.encode('utf-8')  # 5 bytes M-xxx
+        mission_id_number = self.mission_id[2:5]
+        res = mission_id_number.encode("utf-8")
 
         res += struct.pack('>f', round(self.area[0][0], 2))
         res += struct.pack('>f', round(self.area[0][1], 2))
@@ -195,19 +200,20 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
     
     @classmethod
     def _deserialize_payload(cls, payload: bytes, timestamp: int, sequence_num: int):
-        if len(payload) < 30:
+        if len(payload) < 28:
             raise SerializationException("MLMission payload too short")
 
-        mission_id = payload[0:5].decode('utf-8')
+        mission_id_number = payload[0:3].decode('utf-8')
+        mission_id = 'M-' + mission_id_number
 
-        area = [[round(struct.unpack('>f', payload[5:9])[0], 2),
-            round(struct.unpack('>f', payload[9:13])[0], 2)],
-            [round(struct.unpack('>f', payload[13:17])[0], 2),
-            round(struct.unpack('>f', payload[17:21])[0], 2)]]
+        area = [[round(struct.unpack('>f', payload[3:7])[0], 2),
+            round(struct.unpack('>f', payload[7:11])[0], 2)],
+            [round(struct.unpack('>f', payload[11:15])[0], 2),
+            round(struct.unpack('>f', payload[15:19])[0], 2)]]
         
-        task, task_param = unpack_mission_byte(payload[21])
-        duration = int.from_bytes(payload[22:26], 'big')
-        update_interval = int.from_bytes(payload[26:30], 'big')
+        task, task_param = unpack_mission_byte(payload[19])
+        duration = int.from_bytes(payload[20:24], 'big')
+        update_interval = int.from_bytes(payload[24:28], 'big')
 
         return cls(
             area,
@@ -237,19 +243,25 @@ class MLReport(MLMessage):  # mensagem ML do tipo Report (atualização)
         self.progress = progress       # 0-100
 
     def serialize_payload(self) -> bytes:
-        res = self.mission_id.encode('utf-8')      # 5 bytes
+        mission_id_number = self.mission_id[2:5]
+        res= mission_id_number.encode("utf-8")
+
         res += self.status.encode('utf-8')         # 1 byte
-        res += self.progress.to_bytes(1, 'big')    # 1 byte
+        progress_str = str(self.progress) #1-3 bytes
+        res += progress_str.encode('utf-8')
         return res
 
     @classmethod
     def _deserialize_payload(cls, payload: bytes, timestamp: int, sequence_num: int):
-        if len(payload) < 7:
+        if len(payload) < 5:
             raise SerializationException("MLReport payload too short: {len(payload)} bytes")
-        mission_id = payload[0:5].decode('utf-8')
-        status = payload[5:6].decode('utf-8')
-        progress = int.from_bytes(payload[6:7], 'big')
-        return cls(mission_id, status, progress, timestamp, sequence_num)
+        mission_id_number = payload[0:3].decode('utf-8')
+        mission_id = 'M-' + mission_id_number
+
+        status = payload[3:4].decode('utf-8')
+        progress = payload[4:].decode('utf-8')
+
+        return cls(mission_id, status, int(progress), timestamp, sequence_num)
     
     def print_report(self):
         print(f"Mission ID: {self.mission_id}, number of bytes: {len(self.mission_id.encode('utf-8'))}")

@@ -28,6 +28,10 @@ class MotherRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Max-Age", "86400") 
         self.end_headers()
 
+    def log_message(self, format, *args):
+        pass
+
+
     def do_GET(self):
         if self.path == "/rovers/active":
             self._send_json(self.db.get_active_rovers())

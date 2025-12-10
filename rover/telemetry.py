@@ -6,7 +6,7 @@ from typing import List, Tuple
 from common.mission_types import MISSION_TYPES, get_mission_by_name, get_event_name, get_mission_name, get_param_name
 from common.__init__ import MAX_X, MAX_Y, MIN_X, MIN_Y
 
-speed_limit = 800000 #60 km/h
+speed_limit = 800 #80 km/h
 
 class RoverTelemetry:
     
@@ -154,15 +154,15 @@ class RoverTelemetry:
 
         dx = target[0] - self.position[0]
         dy = target[1] - self.position[1]
-        distance = math.sqrt(dx**2 + dy**2)  # distância ao target
+        dist = math.sqrt(dx**2 + dy**2)  # distância ao target
         direction = math.degrees(math.atan2(dy, dx))  # redirecionar rover para target
-        if distance == 0:
+        if dist == 0:
             return
         
         self.speed = speed_limit
         self.direction = direction
     
-        travel_time = (distance / self.speed) * 3600  # segundos
+        travel_time = (dist / self.speed) * 3600  # segundos
 
         # movimento linear
         start_time = time.time()
@@ -170,7 +170,6 @@ class RoverTelemetry:
         
         while time.time() - start_time < travel_time:
             progress = min(1.0, (time.time() - start_time) / travel_time)
-            
             self.position[0] = start_x + (dx * progress)
             self.position[1] = start_y + (dy * progress)
             
@@ -178,17 +177,43 @@ class RoverTelemetry:
     
         self.position = [target[0], target[1]]
         self.speed = 0.0
-        print(f"Arrived at position: {self.position}")
 
     def go_to_area(self, area : list):
-        # Vai para o centro da área
-        avg_distance = sum(pos[0] for pos in area) / 2
-        avg_bearing = sum(pos[1] for pos in area) / 2
-        target_position = [avg_distance, avg_bearing]
+        avg_x = sum(pos[0] for pos in area) / 2
+        avg_y = sum(pos[1] for pos in area) / 2
+        target_position = [avg_x, avg_y]
 
         self.go_to_pos(target_position)
-
     
+    def go_to_pos_step(self, target, speed, interval=1.0): #interval em segundos
+        dx = target[0] - self.position[0]
+        dy = target[1] - self.position[1]
+        dist = math.sqrt(dx**2 + dy**2)
+        
+        if dist < 0.01: #(no dest)
+            self.speed = 0.0
+            return True
+        
+        direction = math.degrees(math.atan2(dy, dx))
+        self.direction = direction
+        
+        speed_km_per_sec = self.speed / 3600.0
+        step_dist = speed_km_per_sec * interval #distância a percorrer neste passo
+        
+        if step_dist > dist:
+            step_dist = dist
+            self.speed = 0.0
+        else:
+            self.speed = speed
+        
+        self.position[0] += (dx / dist) * step_dist
+        self.position[1] += (dy / dist) * step_dist
+        
+        arrivedd = (dist - step_dist) < 0.01
+        if arrivedd:
+            self.speed = 0
+        return arrivedd 
+
     def execute_current_mission(self):
         mission_config = MISSION_TYPES[self.current_mission_task]
         mission_events = mission_config['events']
@@ -201,13 +226,22 @@ class RoverTelemetry:
             ('3', 100),  # """ 3 aos 100%
             ('4', -1)   # """ 4 (erro) - aleatório
         ]
-        
+
+        newpos_x = random.uniform(self.current_mission_area[0][0], self.current_mission_area[0][1]) #posição random dentro da área de exploração
+        newpos_y = random.uniform(self.current_mission_area[1][0], self.current_mission_area[1][1])
+        newpos = [newpos_x, newpos_y]
         completed = set()
         
         while time.time() - self.current_mission_start_time < duration and self.current_mission_progress < 100:
             elapsed = time.time() - self.current_mission_start_time
             self.current_mission_progress = int((elapsed / duration) * 100)
-            
+
+            arrived = self.go_to_pos_step(newpos, 7, 1)
+            if arrived:
+                newpos_x = random.uniform(self.current_mission_area[0][0], self.current_mission_area[0][1]) #posição random dentro da área de exploração
+                newpos_y = random.uniform(self.current_mission_area[1][0], self.current_mission_area[1][1])
+                newpos = [newpos_x, newpos_y]
+
             for event, event_progress in event_sequence:
                 if event in completed:
                     continue
@@ -218,15 +252,14 @@ class RoverTelemetry:
                         self.current_mission_status = event
                         self.current_mission_progress = 100
                         self.operational_state = 'IDLE'
-                        #print(f"debug: erro: {self.current_mission_status}")
                         return
                 elif self.current_mission_progress >= event_progress:
                     self.current_mission_status = event
                     completed.add(event)
-                    #print(f"debug: {self.current_mission_progress}%: {self.current_mission_status}")
             
             time.sleep(1)
-            
+        self.speed = 0
         self.current_mission_progress = 100
         self.current_mission_status = '3'  # missão concluída
         print(f"Mission {self.current_mission_id} Execution Completed")
+
