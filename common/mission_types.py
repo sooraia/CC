@@ -1,27 +1,26 @@
-"""Dicionários para tipos de missão e os seus parãmetros adicionais/eventos de progresso"""
 
 MISSION_TYPES = {
-    'S': {  # Coleção de amostras
+    'S': {  # coleção de amostras
         'name': 'Sample Collection',
         'param': {'S': 'Soil', 'R': 'Rock', 'A': 'Atmosphere', 'W': 'Water'},
         'events': {
             '1': 'Collecting Sample', # 25%
             '2': 'Starting Analysis', # 50% 
             '3': 'Analysis Completed', # 75%
-            '4': 'Collection Failed' # Error
+            '4': 'Collection Failed' # error
         }
     },
-    'I': {  # Captura de imagens
+    'I': {  # captura de imagens
         'name': 'Image Capture',
         'param': {'P': 'Panoramic', 'C': 'Infrared', 'M': 'Macro'},
         'events': {
             '1': 'Capturing Imgage', # 25%
             '2': 'Processing Image', # 50%
             '3': 'Quality Verified',# 75%
-            '4': 'Camera Error' # Error
+            '4': 'Camera Error' # error
         }
     },
-    'E': {  # Análise ambiental
+    'E': {  # análise ambiental
         'name': 'Environmental Analysis',
         'param': {'T': 'Temperature', 'R': 'Radiation', 'P': 'Pressure', 'H': 'Humidity'},
         'events': {
@@ -31,7 +30,7 @@ MISSION_TYPES = {
             '4': 'Sensor Failure'
         }
     },
-    'D': {  # Instalação de equipamentos
+    'D': {  # instalação de equipamentos
         'name': 'Equipment Deployment',
         'param': {'S': 'Seismometer', 'W': 'Weather Station', 'M': 'Marker', 'C': 'Communication Relay'},
         'events': {

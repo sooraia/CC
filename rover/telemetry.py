@@ -99,10 +99,10 @@ class RoverTelemetry:
 
     def _calculate_sun_position(self, current_time):
         hour = (current_time % 86400) / 3600  # 0-23 horas
-        sun_direction = (hour / 24) * 360  # 0° a 360°
+        sun_direction = (hour / 24) * 360  #0 a 360 graus
         
-        sun_elevation = 90 * math.sin(math.radians((hour - 6) * 15))  # 6h=0°, 12h=90°, 18h=0°
-        sun_elevation = max(0, min(90, sun_elevation))  # Limitar entre 0-90°
+        sun_elevation = 90 * math.sin(math.radians((hour - 6) * 15))  #6h:0graus, 12h=90°, 18h=0°
+        sun_elevation = max(0, min(90, sun_elevation))#limitado entre 0-90°
         return sun_direction, sun_elevation
 
     def _panel_efficiency(self, current_time):
@@ -113,21 +113,21 @@ class RoverTelemetry:
         
         direction_diff = abs(self.solar_orientation[0] - sun_direction)
         direction_diff = min(direction_diff, 360 - direction_diff)
-        direction_efficiency = 1.0 - (direction_diff / 180.0)
+        direction_efficiency = 1.0 - (direction_diff/180.0)
         
         tilt_diff = abs(self.solar_orientation[1] - sun_elevation) #eficiência da inclinação
-        tilt_efficiency = 1.0 - (tilt_diff / 90.0)
+        tilt_efficiency = 1.0 - (tilt_diff/90.0)
         
-        solar_intensity = sun_elevation / 90.0 #intensidade segundo a elevação
+        solar_intensity = sun_elevation/90.0 #intensidade segundo a elevação
         
         efficiency = direction_efficiency * tilt_efficiency * solar_intensity
         return max(0.0, efficiency)
 
     def _update_power_level(self, delta_time, current_time):
         current_power = self.power_level
-        base_consumption = 0.5  # %/min
+        base_consumption = 0.5 #%/min
 
-        if self.operational_state == 'ACTIVE': #consumo maior quando active
+        if self.operational_state == 'ACTIVE': #> consumo se a fazer missão
             state_consumption = 2.0
         else:
             state_consumption = 0.5
@@ -154,15 +154,15 @@ class RoverTelemetry:
 
         dx = target[0] - self.position[0]
         dy = target[1] - self.position[1]
-        dist = math.sqrt(dx**2 + dy**2)  # distância ao target
-        direction = math.degrees(math.atan2(dy, dx))  # redirecionar rover para target
+        dist = math.sqrt(dx**2 + dy**2)  #distância ao target
+        direction = math.degrees(math.atan2(dy, dx))  #redirecionar rover para target
         if dist == 0:
             return
         
         self.speed = speed_limit
         self.direction = direction
     
-        travel_time = (dist / self.speed) * 3600  # segundos
+        travel_time = (dist / self.speed) * 3600  #seg
 
         # movimento linear
         start_time = time.time()
@@ -198,7 +198,7 @@ class RoverTelemetry:
         self.direction = direction
         
         speed_km_per_sec = self.speed / 3600.0
-        step_dist = speed_km_per_sec * interval #distância a percorrer neste passo
+        step_dist = speed_km_per_sec * interval #distância deste passo
         
         if step_dist > dist:
             step_dist = dist

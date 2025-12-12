@@ -3,10 +3,10 @@ import socket
 import threading
 import time
 
-from common.ml_protocol import MLMessage, MLAck, MLRequest
+from common.ml_protocol import MLMessage, MLAck, MLRequest, SerializationException
 
 ML_TIMEOUT = 3
-ML_MAX_RETRANSMISSIONS = 3
+ML_MAX_RETRANSMISSIONS = 4
 
 
 class MissionLink:
@@ -43,7 +43,11 @@ class MissionLink:
     def receive_packet(self): #retorna True se pacote for válido(ack em pending acks/mission para rover/...), False caso contrário
         try:
             data, addr = self.socket.recvfrom(1024)
-            packet = MLMessage.from_bytes(data)
+            try:
+                packet = MLMessage.from_bytes(data)
+            except SerializationException as e:
+                self.print_log(f'SerializationException: {e}')
+                return
 
             if isinstance(packet, MLAck):
                 return self._handle_ack(packet)

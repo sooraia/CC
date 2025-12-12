@@ -37,7 +37,7 @@ class TelemetrySystemServer:
             except (ConnectionResetError, BrokenPipeError):
                 break 
             except Exception as e:
-                print(f"Erro com cliente {addr}: {e}")
+                print(f"Error with client {addr}: {e}")
                 break
 
     def send(self, data: bytes):

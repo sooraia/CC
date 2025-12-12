@@ -79,9 +79,7 @@
                             <td style="white-space:nowrap;">(${value.orientation[0]}°, ${value.orientation[1]}°)</td>
                             <td>${value['ext_temperature']}°C</td>
                             <td>${value['int_temperature']}°C</td>
-                        </tr>
-                    `;
-                }
+                        </tr>`; }
                 tbody.innerHTML = html;
                 updateTimestamp();
             } catch (error) {

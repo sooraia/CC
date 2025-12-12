@@ -3,8 +3,8 @@ import struct
 TS_LENGTH = 38 #(bytes)
 
 ROVER_STATE = { #Códigos para serializar os estados do rover
-    'M' : 'ACTIVE',
-    'c' : 'ON_THE_WAY',
+    'A' : 'ACTIVE',
+    'W' : 'ON_THE_WAY',
     'I' : 'IDLE',
     'E' : 'ERROR'
 }
@@ -35,7 +35,10 @@ class TSMessage:
         self.direction = direction
  
     def serialize_telemetry(self):
-        rover_id_number = self.rover_id[2:4]
+        if len(self.rover_id) < 4:
+            rover_id_number = "00" 
+        else:
+            rover_id_number = self.rover_id[2:4]
         res =rover_id_number.encode("utf-8")
         
         res += struct.pack('>f', round(self.position[0], 2))
@@ -64,9 +67,9 @@ class TSMessage:
         rover_id_number = data[0:2].decode('utf-8')
         rover_id = 'R-' + rover_id_number
 
-        pos_dist = round(struct.unpack('>f', data[2:6])[0], 2)
-        pos_bearing = round(struct.unpack('>f', data[6:10])[0], 2) 
-        position = [pos_dist, pos_bearing]
+        pos_x = round(struct.unpack('>f', data[2:6])[0], 2)
+        pos_y = round(struct.unpack('>f', data[6:10])[0], 2) 
+        position = [pos_x, pos_y]
 
         power_level = data[10:13].decode('utf-8')
 

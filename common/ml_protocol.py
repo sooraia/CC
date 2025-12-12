@@ -4,6 +4,7 @@ import time
 import struct
 import threading
 
+#serialização da task e parâmetro de missão
 MISSION_CODES = {
     'S': 0b000,
     'I': 0b001,
@@ -68,7 +69,7 @@ class MLMessage(ABC):
         self.sequence_num = sequence_num    # número de sequência
         self.timestamp = timestamp
 
-    def get_message_type(self) -> str:      # códigos para cada tipo de mensagem
+    def get_message_type(self) -> str: # códigos para cada tipo de mensagem
         if isinstance(self, MLRequest):
             return '1'
         elif isinstance(self, MLMission):
@@ -177,9 +178,9 @@ class MLMission(MLMessage):  # mensagem ML do tipo Missão
         ):
             raise ValueError("Invalid Area")
         
-        self.area = area  # [[r1,a1],[r2,a2]]
-        self.task = task              # 1 byte
-        self.task_param = task_param  # 1 byte
+        self.area = area  # [[x1,y1],[x2,y2]]
+        self.task = task
+        self.task_param = task_param 
         self.duration = duration
         self.update_interval = update_interval
 
