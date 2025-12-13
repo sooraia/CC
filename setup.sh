@@ -19,7 +19,7 @@ start_all() {
     # nave-mãe
     echo "Starting mother."
     run_in_node "nave-mae" "python -m mother -l"
-    sleep 2
+    sleep 3
     
     # 3. Iniciar rovers com espaçamento
     echo "Starting rovers."
