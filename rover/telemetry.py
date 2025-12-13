@@ -6,7 +6,7 @@ from typing import List, Tuple
 from common.mission_types import MISSION_TYPES, get_mission_by_name, get_event_name, get_mission_name, get_param_name
 from common.__init__ import MAX_X, MAX_Y, MIN_X, MIN_Y
 
-speed_limit = 800 #80 km/h
+speed_limit = 80 #80 km/h
 
 class RoverTelemetry:
     
@@ -83,7 +83,7 @@ class RoverTelemetry:
     def _update_temperature(self, current_time):
         hour_of_day = (current_time % 86400) / 3600  # 0-23 horas
         base_temp = 10 + 19 * math.sin((hour_of_day - 6) * math.pi / 12)
-        variation = random.uniform(-0.5, 0.5)
+        variation = random.uniform(-0.01, 0.01)
         self.ext_temperature = base_temp + variation
 
         if self.operational_state == 'ACTIVE':

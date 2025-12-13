@@ -28,10 +28,7 @@ start_all() {
         sleep 1
     done
     
-    # 4. Iniciar ground control
     sleep 2
-    echo "4. Starting ground."
-    run_in_node "ground-control" "cd ground && python -m http.server 8000"
 
     echo ""
     echo "Started."
@@ -40,7 +37,7 @@ start_all() {
 }
 
 stop_all() {
-    for node in nave-mae rover-01 rover-02 rover-03 rover-04 ground-control; do
+    for node in nave-mae rover-01 rover-02 rover-03 rover-04; do
         echo -n "  $node:"
         vcmd -c $SESSION_DIR/$node -- pkill -f "python" 2>/dev/null
         sleep 0.3
@@ -55,8 +52,8 @@ case "$1" in
     start) start_all;;
     stop)  stop_all;;
     *)
-        echo "  start - start mother, rovers, ground"
-        echo "  stop - stop processes"
+        echo "  start - Inicializar nave-mae e rovers"
+        echo "  stop - Parar processos"
         exit 1
         ;;
 esac
