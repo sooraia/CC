@@ -1,12 +1,13 @@
 # CC-TP2
-Trabalho prático de Comunicações por Computador
+Trabalho prático 2 de Comunicações por Computador.
 
+Grupo 10:
 * Sofia Freitas (a106798)
 * Soraia Pereira (a106806)
 
 # Setup na topologia
-A topologia da rede está definida no ficheiro [`config/Topologia.xml`](config/Topologia.xml).
-As seguintes instruções explicam como inicializar o sistema após colocar a diretoria em volume e iniciar uma sessão com a topologia no emulador Core.
+A topologia da rede está definida em [`config/Topologia.xml`](config/Topologia.xml).
+As seguintes instruções explicam como inicializar o sistema após copiar o projeto para `/volume` e iniciar uma sessão com a topologia no emulador Core. Alterar a variável `PROJECT_DIR` em [`setup.sh`](setup.sh) se necessário.
 
 Abrir terminal com:
 ```
