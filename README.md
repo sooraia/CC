@@ -1,6 +1,6 @@
 # Communication Protocols for Planetary Exploration
 
-This main objective of this project was to design and implement two main communicaiton protocols for a network operating over a planetary exploration scenario involving a mothership, multiple rovers, and the supervisory interface Ground Control. The protocols implemented are the following: 
+The main objective of this project was to design and implement two main communicaiton protocols for a network operating over a planetary exploration scenario involving a mothership, multiple rovers, and the supervisory interface Ground Control. The protocols implemented are the following: 
 - TelemetryStream (TS), built over TCP, responsible for continuously monitoring the rovers' status
 - MissionLink (ML), built over UDP, dedicated to defining, transmitting, and tracking missions. 
 
