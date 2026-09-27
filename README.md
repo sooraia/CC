@@ -6,7 +6,10 @@ This main objective of this project was to design and implement two main communi
 
 This solution was designed to operate within the following topology, which is defined [here](config/Topologia.xml).
 
-<img src=topology.png style="width: 600px; display: block; margin: 0 auto;">
+<div style="display: flex; justify-content: center;">
+  <img src="topology.png" style="width: 600px;">
+</div>
+
 <br>
 
 Both the protocols are specified in the [`report`](report.pdf) (PT) along with other relevant information.
