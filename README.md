@@ -6,9 +6,9 @@ This main objective of this project was to design and implement two main communi
 
 This solution was designed to operate within the following topology, which is defined [here](config/Topologia.xml).
 
-<div style="display: flex; justify-content: center;">
-  <img src="topology.png" style="width: 600px;">
-</div>
+<p align="center">
+  <img src="topology.png" width="600">
+</p>
 
 <br>
 
