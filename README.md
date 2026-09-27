@@ -1,43 +1,57 @@
-# CC-TP2
-Trabalho prático 2 de Comunicações por Computador.
+# Communication Protocols for Planetary Exploration
 
-Grupo 10:
-* Sofia Freitas (a106798)
-* Soraia Pereira (a106806)
+This main objective of this project was to design and implement two main communicaiton protocols for a network operating over a planetary exploration scenario involving a mothership, multiple rovers, and the supervisory interface Ground Control. The protocols implemented are the following: 
+- TelemetryStream (TS), built over TCP, responsible for continuously monitoring the rovers' status
+- MissionLink (ML), built over UDP, dedicated to defining, transmitting, and tracking missions. 
+
+This solution was designed to operate within the following topology, which is defined [here](config/Topologia.xml).
+
+<img src=topology.png style="width: 600px; display: block; margin: 0 auto;">
+<br>
+
+Both the protocols are specified in the [`report`](report.pdf) (PT) along with other relevant information.
+
+Project developed for the Computer Communications course during the 3rd year of Uminho's Software Engineering bachelors.
+
+## Team:
+* Sofia Freitas ([`sofimfreitas`](https://github.com/sofimfreitas))
+* Soraia Pereira ([`sooraia`](https://github.com/sooraia))
+
 
 # Setup
-A topologia da rede está definida em [`config/Topologia.xml`](config/Topologia.xml).
-As seguintes instruções explicam como inicializar o sistema após copiar o projeto para `/volume` e iniciar uma sessão com a topologia no emulador Core. Alterar a variável `PROJECT_DIR` em [`setup.sh`](setup.sh) se necessário.
+The network topology is defined in [`config/Topologia.xml`](config/Topologia.xml).
+The following instructions explain how to set up the system using [this dockerized version of Coreemu](https://github.com/eivarin/Dockerized-Coreemu-Template) after copying the project to `/volume` and starting a session with the topology in the Core emulator. Change the `PROJECT_DIR` variable in [`setup.sh`](setup.sh) if necessary.
 
-Abrir terminal com:
+
 ```
 docker exec -it core bash
 ```
-Navegar até à diretoria e executar script de inicialização:
+
+Go to the project directory and run the setup script:
 ```
 ./setup.sh start
 ```
-Para parar, executar:
+To stop, run:
 ```
 ./setup.sh stop
 ```
-## Interface Ground Control
+## Ground Control Interface
 
-Para aceder à interface web do Ground Control:
+To access the Ground Control web interface using firefox:
 ```
 firefox ground/index.html
 ```
 
-## Execução manual
-Alternativamente, pode-se executar manualmente cada componente.
+## Setting up each component manually
+Alternatively, each component can be executed manually.
 
-Na nave-mãe:
+In a shell in the mothership:
 ```
-bash config/mother_route_setup.sh  #Configurar rotas
-python -m mother # flag -l opcional para criar ficheiros com os logs do Mission Link em /tmp
+bash config/mother_route_setup.sh  # Setting up the routing table for the mothership
+python -m mother # optionally use the -l flag to create files with the ML logs in /tmp
 ```
 
-Nos rovers:
+In a shell in each rover:
 ```
-python -m rover # flag -l opcional para criar ficheiros com os logs do Mission Link em /tmp
+python -m rover # optionally use the -l flag to create files with the ML logs in /tmp
 ```
